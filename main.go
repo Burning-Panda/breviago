@@ -1,17 +1,25 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
+
+	"github.com/Burning-Panda/acronyms-vault/db"
 
 	"github.com/gin-gonic/gin"
 )
 
-var db *sql.DB
-
 func main() {
-	initDB()
+	// Initialize database
+	database := db.GetDB()
+	if database == nil {
+		log.Fatal("Failed to initialize database")
+	}
+	defer func() {
+		if err := db.CloseDB(); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+	}()
 
 	r := gin.Default()
 
@@ -55,9 +63,32 @@ func getDefault(c *gin.Context) {
 }
 
 func getAcronyms(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, World!",
-	})
+	database := db.GetDB()
+	rows, err := database.Query("SELECT id, short_form, long_form, created_at, updated_at FROM acronyms")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
+		return
+	}
+	defer rows.Close()
+
+	var acronyms []gin.H
+	for rows.Next() {
+		var id int
+		var shortForm, longForm, createdAt, updatedAt string
+		if err := rows.Scan(&id, &shortForm, &longForm, &createdAt, &updatedAt); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan acronym"})
+			return
+		}
+		acronyms = append(acronyms, gin.H{
+			"id": id,
+			"short_form": shortForm,
+			"long_form": longForm,
+			"created_at": createdAt,
+			"updated_at": updatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, acronyms)
 }
 
 func createAcronym(c *gin.Context) {
@@ -89,19 +120,6 @@ func searchAcronyms(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
-
-func initDB() {
-	db, err := sql.Open("sqlite3", "./acronyms.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-}
-
-
-
-
-
 
 
 
