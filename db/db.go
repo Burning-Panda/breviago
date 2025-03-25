@@ -51,6 +51,19 @@ func initSchema() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Is WAL mode enabled?
+	walMode := database.QueryRow("PRAGMA journal_mode")
+	var mode string
+	err = walMode.Scan(&mode)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	if mode != "WAL" {
+		log.Println("WAL mode is not enabled, enabling it")
+		database.Exec("PRAGMA journal_mode = WAL")
+	}
 }
 
 // CloseDB closes the database connection

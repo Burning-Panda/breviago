@@ -23,6 +23,16 @@
 go.work
 /tmp/*
 
+### Database ###
+*.db
+*.db-journal
+*.db-trace
+*.db-lock
+*.db-shm
+*.db-wal
+*.db-journal
+*.db-trace
+*.db-lock
 
 ### JetBrains ###
 .idea/**/workspace.xml
