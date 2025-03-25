@@ -1,0 +1,19 @@
+meta {
+  name: Create Acronym
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/api/v1/acronyms
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "short_form": "rbac",
+    "long_form": "Role-Based Access Controll",
+    "description": "No extra info"
+  }
+}

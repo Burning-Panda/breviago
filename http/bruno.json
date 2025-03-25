@@ -1,0 +1,12 @@
+{
+	"version": "1",
+	"name": "Acronyms",
+	"type": "collection",
+	"ignore": ["node_modules", ".git", "tmp"],
+	"size": 0,
+	"filesCount": 0,
+	"presets": {
+		"requestType": "http",
+		"requestUrl": "{{url}}/"
+	}
+}
