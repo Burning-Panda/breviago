@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/Burning-Panda/acronyms-vault/db"
 	"github.com/google/uuid"
@@ -134,7 +133,7 @@ func createAcronyms(c *gin.Context) {
 func updateAcronym(c *gin.Context) {
 	id := c.Param("id")
 
-	i, err := strconv.Atoi(id)
+	i, err := uuid.Parse(id)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
@@ -142,7 +141,7 @@ func updateAcronym(c *gin.Context) {
 	}
 
 	var acronym = db.Acronym{
-		ID: i,
+		UUID: i,
 	}
 
 	if err := c.ShouldBindJSON(&acronym); err != nil {
@@ -152,41 +151,37 @@ func updateAcronym(c *gin.Context) {
 
 	database := db.GetDB()
 
-	res, err := database.Exec(
-		"UPDATE acronyms SET short_form = ?, long_form = ?, description = ? WHERE id = ?",
-		acronym.ShortForm,
-		acronym.LongForm,
-		acronym.Description,
-		id,
-	)
-
+	var exists bool
+	err = database.QueryRow("SELECT EXISTS(SELECT 1 FROM acronyms WHERE uuid = ?)", i).Scan(&exists)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update acronym"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check if acronym exists"})
 		return
 	}
 
-	lastInsert, liErr := res.LastInsertId()
-
-	if liErr != nil {
-		c.JSON(http.StatusAccepted, gin.H{"error": "Acronym was updated, but it was not returned"})
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
+		return
 	}
 
-	var returnedAcronym = db.Acronym{
-		ID: int(lastInsert),
-	}
-
-	err = database.QueryRow(
-		"SELECT * FROM acronyms WHERE id = ?",
-		lastInsert,
+	var returnedAcronym db.Acronym
+	updateErr := database.QueryRow(
+		"UPDATE acronyms SET short_form = ?, long_form = ?, description = ? WHERE uuid = ?",
+		acronym.ShortForm,
+		acronym.LongForm,
+		acronym.Description,
+		i,
 	).Scan(
-		&returnedAcronym.ID,
+		&returnedAcronym.UUID,
 		&returnedAcronym.ShortForm,
 		&returnedAcronym.LongForm,
 		&returnedAcronym.Description,
+		&returnedAcronym.CreatedAt,
+		&returnedAcronym.UpdatedAt,
 	)
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated acronym"})
+	if updateErr != nil {
+		fmt.Println("Error: ", updateErr)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update acronym"})
 		return
 	}
 
