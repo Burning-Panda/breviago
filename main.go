@@ -1,11 +1,14 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/Burning-Panda/acronyms-vault/db"
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,6 +48,7 @@ func main() {
 	v1.GET("/acronyms", getAcronyms)
 
 	v1.POST("/acronyms", createAcronym)
+	v1.POST("/acronyms/batch", createAcronyms)
 
 	v1.PUT("/acronyms/:id", updateAcronym)
 
@@ -66,7 +70,7 @@ func getDefault(c *gin.Context) {
 
 func getAcronyms(c *gin.Context) {
 	database := db.GetDB()
-	rows, err := database.Query("SELECT id, short_form, long_form, created_at, updated_at FROM acronyms ORDER BY short_form DESC")
+	rows, err := database.Query("SELECT uuid, short_form, long_form, created_at, updated_at FROM acronyms ORDER BY short_form DESC")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
 		return
@@ -75,16 +79,16 @@ func getAcronyms(c *gin.Context) {
 
 	var acronyms []gin.H
 	for rows.Next() {
-		var id int
+		var uuid uuid.UUID
 		var shortForm, longForm, createdAt, updatedAt string
 
-		err := rows.Scan(&id, &shortForm, &longForm, &createdAt, &updatedAt);
+		err := rows.Scan(&uuid, &shortForm, &longForm, &createdAt, &updatedAt);
 		if  err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan acronym"})
 			return
 		}
 		acronyms = append(acronyms, gin.H{
-			"id": id,
+			"id": uuid,
 			"short_form": shortForm,
 			"long_form": longForm,
 			"created_at": createdAt,
@@ -96,48 +100,35 @@ func getAcronyms(c *gin.Context) {
 }
 
 func createAcronym(c *gin.Context) {
-
-	var acronym = db.Acronym{
-		ShortForm: "",
-		LongForm: "",
-		Description: "",
-	}
-
+	var acronym db.Acronym
 	if err := c.ShouldBindJSON(&acronym); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	db := db.GetDB()
-
-	res, err := db.Exec(
-		"INSERT INTO acronyms (short_form, long_form, description) VALUES (?, ?, ?)",
-		acronym.ShortForm,
-		acronym.LongForm,
-		acronym.Description,
-	)
-
-	if err != nil {
+	if err := db.InsertAcronym(&acronym); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronym"})
 		return
 	}
 
-	id, err := res.LastInsertId()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get last insert id"})
+	c.JSON(http.StatusCreated, acronym)
+}
+
+func createAcronyms(c *gin.Context) {
+	var acronyms []db.Acronym
+	if err := c.ShouldBindJSON(&acronyms); err != nil {
+		fmt.Println("Error: ", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	db.QueryRow(
-		"SELECT id, short_form, long_form, description FROM acronyms WHERE id = ?", id,
-	).Scan(
-		&acronym.ID,
-		&acronym.ShortForm,
-		&acronym.LongForm,
-		&acronym.Description,
-	)
+	createdAcronyms, err := db.InsertAcronyms(acronyms)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronyms"})
+		return
+	}
 
-	c.JSON(http.StatusOK, acronym)
+	c.JSON(http.StatusCreated, createdAcronyms)
 }
 
 func updateAcronym(c *gin.Context) {
@@ -209,9 +200,36 @@ func deleteAcronym(c *gin.Context) {
 }
 
 func getAcronym(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, World!",
-	})
+	id := c.Param("id")
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
+		return
+	}
+
+	var acronym db.Acronym
+	err = db.GetDB().QueryRow(
+		"SELECT uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE uuid = ?",
+		uuid,
+	).Scan(
+		&acronym.UUID,
+		&acronym.ShortForm,
+		&acronym.LongForm,
+		&acronym.Description,
+		&acronym.CreatedAt,
+		&acronym.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronym"})
+		return
+	}
+
+	c.JSON(http.StatusOK, acronym)
 }
 
 func searchAcronyms(c *gin.Context) {

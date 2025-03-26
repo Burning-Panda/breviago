@@ -3,8 +3,10 @@ package db
 import (
 	"database/sql"
 	"log"
+	"os"
 	"sync"
 
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -38,6 +40,7 @@ func GetDB() *sql.DB {
 
 type Acronym struct {
 	ID          int    `json:"id"`
+	UUID        uuid.UUID `json:"uuid"`
 	ShortForm   string `json:"short_form"`
 	LongForm    string `json:"long_form"`
 	Description string `json:"description"`
@@ -45,14 +48,26 @@ type Acronym struct {
 	UpdatedAt   string `json:"updated_at"`
 }
 
+type AcronymCategory struct {
+	ID          int    `json:"id"`
+	UUID        uuid.UUID `json:"uuid"`
+	AcronymID   int `json:"acronym_id"`
+	CategoryID  int `json:"category_id"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+}
+// 
+
 type Category struct {
 	ID          int    `json:"id"`
+	UUID        uuid.UUID `json:"uuid"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
 type Label struct {
 	ID          int    `json:"id"`
+	UUID        uuid.UUID `json:"uuid"`
 	Label       string `json:"label"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
@@ -60,53 +75,13 @@ type Label struct {
 
 // initSchema creates the necessary tables if they don't exist
 func initSchema() {
-	createTableSQL := `
-	CREATE TABLE IF NOT EXISTS acronyms (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		short_form TEXT NOT NULL,
-		long_form TEXT NOT NULL,
-		description TEXT,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		
-		UNIQUE(short_form, long_form)
-	);
-	CREATE TABLE IF NOT EXISTS acronym_categories (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		acronym_id INTEGER NOT NULL,
-		category_id INTEGER NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	// Read the init.sql file
+	initSQL, err := os.ReadFile("./db/init.sql")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		FOREIGN KEY (acronym_id) REFERENCES acronyms(id) ON DELETE CASCADE,
-		FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-	);
-	CREATE TABLE IF NOT EXISTS categories (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE,
-		description TEXT,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	);
-	CREATE TABLE IF NOT EXISTS note_joiner (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		acronym_id INTEGER,
-		note_id INTEGER NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		
-		FOREIGN KEY (acronym_id) REFERENCES acronyms(id) ON DELETE SET NULL,
-		FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
-	);
-	CREATE TABLE IF NOT EXISTS notes (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		note TEXT NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	);
-	`
-
-	_, err := database.Exec(createTableSQL)
+	_, err = database.Exec(string(initSQL))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -132,4 +107,111 @@ func CloseDB() error {
 		return database.Close()
 	}
 	return nil
+}
+
+// InsertAcronym inserts a single acronym into the database
+func InsertAcronym(acronym *Acronym) error {
+	database := GetDB()
+	
+	// Generate a new UUID if not provided
+	if acronym.UUID == uuid.Nil {
+		acronym.UUID = uuid.New()
+	}
+	
+	res, err := database.Exec(
+		"INSERT INTO acronyms (uuid, short_form, long_form, description) VALUES (?, ?, ?, ?)",
+		acronym.UUID,
+		acronym.ShortForm,
+		acronym.LongForm,
+		acronym.Description,
+	)
+	if err != nil {
+		return err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	return database.QueryRow(
+		"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE id = ?", 
+		id,
+	).Scan(
+		&acronym.ID,
+		&acronym.UUID,
+		&acronym.ShortForm,
+		&acronym.LongForm,
+		&acronym.Description,
+		&acronym.CreatedAt,
+		&acronym.UpdatedAt,
+	)
+}
+
+// InsertAcronyms inserts multiple acronyms into the database
+func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
+	database := GetDB()
+	
+	// Start a transaction
+	tx, err := database.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// Prepare the insert statement
+	stmt, err := tx.Prepare(
+		"INSERT INTO acronyms (uuid, short_form, long_form, description) VALUES (?, ?, ?, ?)",
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	// Insert each acronym
+	for i := range acronyms {
+		// Generate a new UUID if not provided
+		if acronyms[i].UUID == uuid.Nil {
+			acronyms[i].UUID = uuid.New()
+		}
+
+		res, err := stmt.Exec(
+			acronyms[i].UUID,
+			acronyms[i].ShortForm,
+			acronyms[i].LongForm,
+			acronyms[i].Description,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		id, err := res.LastInsertId()
+		if err != nil {
+			return nil, err
+		}
+
+		// Update the acronym with the new ID and timestamps
+		err = tx.QueryRow(
+			"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE id = ?",
+			id,
+		).Scan(
+			&acronyms[i].ID,
+			&acronyms[i].UUID,
+			&acronyms[i].ShortForm,
+			&acronyms[i].LongForm,
+			&acronyms[i].Description,
+			&acronyms[i].CreatedAt,
+			&acronyms[i].UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return acronyms, nil
 } 

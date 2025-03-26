@@ -55,7 +55,7 @@ The Acronyms System API serves as a centralized service to:
   
 - [ ] **Security Enhancements**
   - [ ] Token-based authentication.
-  - [x] Input validation and error handling.
+  - [ ] Input validation and error handling.
   
 - [ ] **Documentation & Testing**
   - [ ] Integrate API documentation (e.g., Swagger/OpenAPI).

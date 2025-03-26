@@ -1,12 +1,12 @@
 meta {
-  name: Update Acronym
+  name: Get Single Acronym
   type: http
-  seq: 5
+  seq: 2
 }
 
-put {
+get {
   url: {{url}}/api/v1/acronyms/{{id}}
-  body: json
+  body: none
   auth: inherit
 }
 

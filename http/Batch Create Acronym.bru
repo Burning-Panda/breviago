@@ -1,0 +1,26 @@
+meta {
+  name: Batch Create Acronym
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{url}}/api/v1/acronyms/batch
+  body: json
+  auth: inherit
+}
+
+body:json {
+  [
+    {
+      "short_form": "abac",
+      "long_form": "Attribute-Based Access Control",
+      "description": "No extra info"
+    },
+    {
+      "short_form": "pbac",
+      "long_form": "Policy-Based Access Control",
+      "description": "No extra info"
+    }
+  ]
+}
