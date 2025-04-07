@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./acronyms.db:/app/acronyms.db
+      - ./acronyms.db-shm:/app/acronyms.db-shm
+      - ./acronyms.db-wal:/app/acronyms.db-wal
+    environment:
+      - DB_PATH=/app/acronyms.db
+      - PORT=8080
+      - GIN_MODE=release
+    restart: unless-stopped

@@ -1,12 +1,16 @@
-# Acronyms System API
+# Brevido
 
-Acronyms System is a web API designed to handle a personal easily searchable list of acronyms that can be shared with others.
+Brevido is a web API designed to handle a personal easily searchable list of acronyms that can be shared with others.
 This API provides endpoints to create, read, update, and delete acronyms, as well as a admin panel to manage user and organization data.
 It is built exclusively as an API service to support seamless integration with front-end applications or other services.
 
+## Philosophy
+
+Brevido is designed to be a simple, easy-to-use, and secure acronym management system.
+
 ## Overview
 
-The Acronyms System API serves as a centralized service to:
+The Brevido API serves as a centralized service to:
 - Store and manage acronyms.
 - Associate acronyms with users and organizations.
 - Provide secure, authenticated access to data.
@@ -38,10 +42,10 @@ The Acronyms System API serves as a centralized service to:
 
 - [x] **Project Initialization**
   - [x] Set up project structure.
-  - [ ] Define API endpoints.
+  - [x] Define API endpoints.
   
-- [ ] **Acronym Module**
-  - [ ] Implement CRUD endpoints for acronyms.
+- [x] **Acronym Module**
+  - [x] Implement CRUD endpoints for acronyms.
   - [ ] Add search and filter functionality.
   
 - [ ] **User Module**
