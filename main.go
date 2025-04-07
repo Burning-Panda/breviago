@@ -123,7 +123,7 @@ func createAcronyms(c *gin.Context) {
 
 	createdAcronyms, err := db.InsertAcronyms(acronyms)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronyms"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create acronyms: %v", err)})
 		return
 	}
 
@@ -228,9 +228,14 @@ func getAcronym(c *gin.Context) {
 }
 
 func searchAcronyms(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, World!",
-	})
+	searchTerm := c.Query("query")
+
+	acronyms, err := db.SearchAcronyms(searchTerm)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search acronyms"})
+		return
+	}
+	c.JSON(http.StatusOK, acronyms)
 }
 
 

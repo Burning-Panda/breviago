@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -215,3 +216,39 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 
 	return acronyms, nil
 } 
+
+func SearchAcronyms(query string) ([]Acronym, error) {
+	database := GetDB()
+
+	rows, err := database.Query(
+		"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE short_form LIKE ? OR long_form LIKE ? OR description LIKE ?",
+		fmt.Sprintf("%%%s%%", query),
+		fmt.Sprintf("%%%s%%", query),
+		fmt.Sprintf("%%%s%%", query),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var acronyms []Acronym
+	for rows.Next() {
+		var acronym Acronym
+		err := rows.Scan(
+			&acronym.ID,
+			&acronym.UUID,
+			&acronym.ShortForm,
+			&acronym.LongForm,
+			&acronym.Description,
+			&acronym.CreatedAt,
+			&acronym.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		acronyms = append(acronyms, acronym)
+	}
+
+	return acronyms, nil
+}

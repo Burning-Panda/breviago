@@ -1,0 +1,15 @@
+meta {
+  name: Search Acronyms
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{url}}/api/v1/acronyms/search?query=role
+  body: none
+  auth: inherit
+}
+
+params:query {
+  query: role
+}
