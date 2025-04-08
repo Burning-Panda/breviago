@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN GOOS=linux go build -o breviago
+RUN CGO_ENABLED=1 GOOS=linux go build -o breviago
 
 # Use a minimal alpine image for the final stage
 FROM alpine:latest
