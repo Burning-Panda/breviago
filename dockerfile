@@ -1,3 +1,5 @@
+# TODO: https://chemidy.medium.com/create-the-smallest-and-secured-golang-docker-image-based-on-scratch-4752223b7324
+
 # Use the official Golang image as the base image
 FROM golang:1.24-bookworm as builder
 ENV CGO_ENABLED=1
@@ -19,6 +21,9 @@ RUN GOOS=linux go build -o breviago
 
 # Use a minimal alpine image for the final stage
 FROM alpine:latest
+
+# Install necessary runtime dependencies
+RUN apk add --no-cache libc6-compat
 
 # Set the working directory
 WORKDIR /app
