@@ -1,5 +1,6 @@
 # Use the official Golang image as the base image
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24-bookworm as builder
+ENV CGO_ENABLED=1
 
 # Set the working directory
 WORKDIR /app
@@ -14,7 +15,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o breviago
+RUN GOOS=linux go build -o breviago
 
 # Use a minimal alpine image for the final stage
 FROM alpine:latest
