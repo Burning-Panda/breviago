@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/Burning-Panda/acronyms-vault/db"
-	"github.com/google/uuid"
-
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	. "github.com/openfga/go-sdk/client"
 )
 
 func main() {
@@ -23,6 +24,17 @@ func main() {
 			log.Printf("Error closing database: %v", err)
 		}
 	}()
+
+	fgaClient, err := NewSdkClient(&ClientConfiguration{
+        ApiUrl:  os.Getenv("FGA_API_URL"), // required, e.g. https://api.fga.example
+        StoreId: os.Getenv("FGA_STORE_ID"), // not needed when calling `CreateStore` or `ListStores`
+        AuthorizationModelId: os.Getenv("FGA_MODEL_ID"), // optional, recommended to be set for production
+    })
+
+	if err != nil {
+		log.Fatal("Failed to initialize FGA client: %v", err)
+	}
+
 
 	r := gin.Default()
 
