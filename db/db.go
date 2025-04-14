@@ -39,40 +39,6 @@ func GetDB() *sql.DB {
 	return database
 }
 
-type Acronym struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	ShortForm   string `json:"short_form"`
-	LongForm    string `json:"long_form"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
-
-type AcronymCategory struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	AcronymID   int `json:"acronym_id"`
-	CategoryID  int `json:"category_id"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
-// 
-
-type Category struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-type Label struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	Label       string `json:"label"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
 
 // initSchema creates the necessary tables if they don't exist
 func initSchema() {
@@ -115,8 +81,8 @@ func InsertAcronym(acronym *Acronym) error {
 	database := GetDB()
 	
 	// Generate a new UUID if not provided
-	if acronym.UUID == uuid.Nil {
-		acronym.UUID = uuid.New()
+	if acronym.UUID == "" {
+		acronym.UUID = uuid.New().String()
 	}
 	
 	res, err := database.Exec(
@@ -172,8 +138,8 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 	// Insert each acronym
 	for i := range acronyms {
 		// Generate a new UUID if not provided
-		if acronyms[i].UUID == uuid.Nil {
-			acronyms[i].UUID = uuid.New()
+		if acronyms[i].UUID == "" {
+			acronyms[i].UUID = uuid.New().String()
 		}
 
 		res, err := stmt.Exec(

@@ -5,12 +5,103 @@ package auth
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	openfgaClient "github.com/openfga/go-sdk/client"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
-// AuthMiddleware is a middleware for Gin that checks if the user has the required permissions
+var jwtSecret = []byte("your-secret-key") // In production, use environment variable
+
+type User struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	UUID         string    `gorm:"type:uuid;default:gen_random_uuid()" json:"uuid"`
+	Username     string    `gorm:"unique" json:"username"`
+	Email        string    `gorm:"unique" json:"email"`
+	PasswordHash string    `gorm:"-" json:"-"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// AuthMiddleware is a middleware for Gin that checks if the user is authenticated
+func AuthMiddleware(c *gin.Context) {
+	// Skip authentication for login and public routes
+	if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/" {
+		c.Next()
+		return
+	}
+
+	// Get token from Authorization header
+	token := GetUserFromToken(c)
+	if token == "" {
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
+		return
+	}
+
+	// Validate JWT token
+	claims := jwt.MapClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+
+	if err != nil || !parsedToken.Valid {
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
+		return
+	}
+
+	// Set user in context
+	c.Set("user", claims["user_id"])
+	c.Next()
+}
+
+// LoginHandler handles user login
+func LoginHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+
+		var user User
+		result := db.Where("username = ?", username).First(&user)
+		if result.Error != nil {
+			c.HTML(http.StatusUnauthorized, "login.html", gin.H{
+				"error": "Invalid credentials",
+			})
+			return
+		}
+
+		// Compare password hash
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+			c.HTML(http.StatusUnauthorized, "login.html", gin.H{
+				"error": "Invalid credentials",
+			})
+			return
+		}
+
+		// Generate JWT token
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"user_id":  user.UUID,
+			"username": user.Username,
+			"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		})
+
+		tokenString, err := token.SignedString(jwtSecret)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": "Error generating token",
+			})
+			return
+		}
+
+		// Set token in cookie
+		c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
+		c.Redirect(http.StatusFound, "/")
+	}
+}
 
 // AuthorizationMiddleware creates a middleware that checks permissions using OpenFGA
 func AuthorizationMiddleware(fgaClient *openfgaClient.OpenFgaClient, objectType string, relation string) gin.HandlerFunc {
@@ -71,7 +162,5 @@ func GetUserFromToken(c *gin.Context) string {
 		return ""
 	}
 
-	// In a real implementation, you would validate the token and extract the user
-	// For now, we'll just return the token as the user ID
 	return parts[1]
 }

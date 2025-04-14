@@ -1,55 +1,50 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
+	"time"
 
+	"github.com/Burning-Panda/acronyms-vault/auth"
 	"github.com/Burning-Panda/acronyms-vault/db"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	. "github.com/openfga/go-sdk/client"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
 	// Initialize database
-	database := db.GetDB()
+	database := db.GetGormDB()
 	if database == nil {
 		log.Fatal("Failed to initialize database")
 	}
 	defer func() {
-		if err := db.CloseDB(); err != nil {
+		if err := db.CloseGormDB(); err != nil {
 			log.Printf("Error closing database: %v", err)
 		}
 	}()
 
-	fgaClient, err := NewSdkClient(&ClientConfiguration{
-        ApiUrl:  os.Getenv("FGA_API_URL"), // required, e.g. https://api.fga.example
-        StoreId: os.Getenv("FGA_STORE_ID"), // not needed when calling `CreateStore` or `ListStores`
-        AuthorizationModelId: os.Getenv("FGA_MODEL_ID"), // optional, recommended to be set for production
-    })
-
-	if err != nil {
-		log.Fatal("Failed to initialize FGA client: %v", err)
-	}
-
-
 	r := gin.Default()
 
-	// Middleware
-	r.Use(func(ctx *gin.Context) {
-		// TODO: Add Authentication middleware here
-		ctx.Next()
+	// Load HTML templates
+	r.LoadHTMLGlob("templates/*")
+
+	// Authentication routes
+	r.GET("/login", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "login.html", gin.H{})
 	})
+	r.POST("/login", auth.LoginHandler(database))
+
+	// Middleware
+	r.Use(auth.AuthMiddleware)
 
 	r.GET("/", getDefault)
 
 	// API v1
 	v1 := r.Group("/api/v1")
 
-	// Public the routes
+	// Public routes
 	v1.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Hello, World!",
@@ -57,19 +52,20 @@ func main() {
 	})
 
 	v1.GET("/acronyms", getAcronyms)
-
 	v1.POST("/acronyms", createAcronym)
 	v1.POST("/acronyms/batch", createAcronyms)
-
 	v1.PUT("/acronyms/:id", updateAcronym)
-
 	v1.DELETE("/acronyms/:id", deleteAcronym)
-
 	v1.GET("/acronyms/:id", getAcronym)
-
 	v1.GET("/acronyms/search", searchAcronyms)
 
-	
+	auth := v1.Group("/auth")
+	auth.POST("/login", auth.LoginHandler(database))
+	auth.POST("/register", auth.RegisterHandler(database))
+	auth.POST("/logout", auth.LogoutHandler(database))
+	auth.GET("/user", auth.UserHandler(database))
+	auth.POST("/refresh", auth.RefreshHandler(database))
+
 	r.Run(":8080")
 }
 
@@ -80,33 +76,11 @@ func getDefault(c *gin.Context) {
 }
 
 func getAcronyms(c *gin.Context) {
-	database := db.GetDB()
-	rows, err := database.Query("SELECT uuid, short_form, long_form, created_at, updated_at FROM acronyms ORDER BY short_form DESC")
-	if err != nil {
+	var acronyms []db.Acronym
+	if err := db.GetGormDB().Find(&acronyms).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
 		return
 	}
-	defer rows.Close()
-
-	var acronyms []gin.H
-	for rows.Next() {
-		var uuid uuid.UUID
-		var shortForm, longForm, createdAt, updatedAt string
-
-		err := rows.Scan(&uuid, &shortForm, &longForm, &createdAt, &updatedAt);
-		if  err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to scan acronym"})
-			return
-		}
-		acronyms = append(acronyms, gin.H{
-			"id": uuid,
-			"short_form": shortForm,
-			"long_form": longForm,
-			"created_at": createdAt,
-			"updated_at": updatedAt,
-		})
-	}
-
 	c.JSON(http.StatusOK, acronyms)
 }
 
@@ -117,7 +91,7 @@ func createAcronym(c *gin.Context) {
 		return
 	}
 
-	if err := db.InsertAcronym(&acronym); err != nil {
+	if err := db.GetGormDB().Create(&acronym).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronym"})
 		return
 	}
@@ -128,32 +102,30 @@ func createAcronym(c *gin.Context) {
 func createAcronyms(c *gin.Context) {
 	var acronyms []db.Acronym
 	if err := c.ShouldBindJSON(&acronyms); err != nil {
-		fmt.Println("Error: ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	createdAcronyms, err := db.InsertAcronyms(acronyms)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create acronyms: %v", err)})
+	if err := db.GetGormDB().Create(&acronyms).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronyms"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdAcronyms)
+	c.JSON(http.StatusCreated, acronyms)
 }
 
 func updateAcronym(c *gin.Context) {
 	id := c.Param("id")
-
-	i, err := uuid.Parse(id)
-
+	uuid, err := uuid.Parse(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
 		return
 	}
 
-	var acronym = db.Acronym{
-		UUID: i,
+	var acronym db.Acronym
+	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
+		return
 	}
 
 	if err := c.ShouldBindJSON(&acronym); err != nil {
@@ -161,49 +133,28 @@ func updateAcronym(c *gin.Context) {
 		return
 	}
 
-	database := db.GetDB()
-
-	var exists bool
-	err = database.QueryRow("SELECT EXISTS(SELECT 1 FROM acronyms WHERE uuid = ?)", i).Scan(&exists)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check if acronym exists"})
-		return
-	}
-
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
-		return
-	}
-
-	var returnedAcronym db.Acronym
-	updateErr := database.QueryRow(
-		"UPDATE acronyms SET short_form = ?, long_form = ?, description = ? WHERE uuid = ?",
-		acronym.ShortForm,
-		acronym.LongForm,
-		acronym.Description,
-		i,
-	).Scan(
-		&returnedAcronym.UUID,
-		&returnedAcronym.ShortForm,
-		&returnedAcronym.LongForm,
-		&returnedAcronym.Description,
-		&returnedAcronym.CreatedAt,
-		&returnedAcronym.UpdatedAt,
-	)
-
-	if updateErr != nil {
-		fmt.Println("Error: ", updateErr)
+	if err := db.GetGormDB().Save(&acronym).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update acronym"})
 		return
 	}
 
-	c.JSON(http.StatusOK, returnedAcronym)
+	c.JSON(http.StatusOK, acronym)
 }
 
 func deleteAcronym(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, World!",
-	})
+	id := c.Param("id")
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
+		return
+	}
+
+	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).Delete(&db.Acronym{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete acronym"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Acronym deleted successfully"})
 }
 
 func getAcronym(c *gin.Context) {
@@ -215,24 +166,8 @@ func getAcronym(c *gin.Context) {
 	}
 
 	var acronym db.Acronym
-	err = db.GetDB().QueryRow(
-		"SELECT uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE uuid = ?",
-		uuid,
-	).Scan(
-		&acronym.UUID,
-		&acronym.ShortForm,
-		&acronym.LongForm,
-		&acronym.Description,
-		&acronym.CreatedAt,
-		&acronym.UpdatedAt,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronym"})
+	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
 		return
 	}
 
@@ -240,18 +175,84 @@ func getAcronym(c *gin.Context) {
 }
 
 func searchAcronyms(c *gin.Context) {
-	searchTerm := c.Query("query")
+	query := c.Query("query")
+	var acronyms []db.Acronym
 
-	acronyms, err := db.SearchAcronyms(searchTerm)
-	if err != nil {
+	if err := db.GetGormDB().Where("short_form ILIKE ? OR long_form ILIKE ?", 
+		"%"+query+"%", "%"+query+"%").Find(&acronyms).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search acronyms"})
 		return
 	}
+
 	c.JSON(http.StatusOK, acronyms)
 }
 
 
 
+
+/* ########################
+    #### Auth Routes #####
+    ##################### */
+
+func login(c *gin.Context) {
+	// Get the username and password from the request body
+	var loginRequest struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	// Validate the request body
+	if err := c.ShouldBindJSON(&loginRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// Check if the user exists
+	var user db.User
+	if err := db.GetGormDB().Where("username = ?", loginRequest.Username).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	// Check if the password is correct
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+	
+	// Generate a JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	})
+	
+	// Sign the token
+	tokenString, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign token"})
+		return
+	}
+	
+	
+	
+	
+}
+
+func register(c *gin.Context) {
+
+}
+
+func logout(c *gin.Context) {
+
+}
+
+func user(c *gin.Context) {
+
+}
+
+func refresh(c *gin.Context) {
+
+}
 
 
 
