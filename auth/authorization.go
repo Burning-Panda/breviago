@@ -5,26 +5,13 @@ package auth
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	openfgaClient "github.com/openfga/go-sdk/client"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 var jwtSecret = []byte("your-secret-key") // In production, use environment variable
-
-type User struct {
-	ID           uint      `gorm:"primaryKey" json:"id"`
-	UUID         string    `gorm:"type:uuid;default:gen_random_uuid()" json:"uuid"`
-	Username     string    `gorm:"unique" json:"username"`
-	Email        string    `gorm:"unique" json:"email"`
-	PasswordHash string    `gorm:"-" json:"-"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-}
 
 // AuthMiddleware is a middleware for Gin that checks if the user is authenticated
 func AuthMiddleware(c *gin.Context) {
@@ -57,50 +44,6 @@ func AuthMiddleware(c *gin.Context) {
 	// Set user in context
 	c.Set("user", claims["user_id"])
 	c.Next()
-}
-
-// LoginHandler handles user login
-func LoginHandler(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		username := c.PostForm("username")
-		password := c.PostForm("password")
-
-		var user User
-		result := db.Where("username = ?", username).First(&user)
-		if result.Error != nil {
-			c.HTML(http.StatusUnauthorized, "login.html", gin.H{
-				"error": "Invalid credentials",
-			})
-			return
-		}
-
-		// Compare password hash
-		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-			c.HTML(http.StatusUnauthorized, "login.html", gin.H{
-				"error": "Invalid credentials",
-			})
-			return
-		}
-
-		// Generate JWT token
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"user_id":  user.UUID,
-			"username": user.Username,
-			"exp":      time.Now().Add(time.Hour * 24).Unix(),
-		})
-
-		tokenString, err := token.SignedString(jwtSecret)
-		if err != nil {
-			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
-				"error": "Error generating token",
-			})
-			return
-		}
-
-		// Set token in cookie
-		c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
-		c.Redirect(http.StatusFound, "/")
-	}
 }
 
 // AuthorizationMiddleware creates a middleware that checks permissions using OpenFGA

@@ -3,14 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/Burning-Panda/acronyms-vault/auth"
 	"github.com/Burning-Panda/acronyms-vault/db"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -59,12 +56,12 @@ func main() {
 	v1.GET("/acronyms/:id", getAcronym)
 	v1.GET("/acronyms/search", searchAcronyms)
 
-	auth := v1.Group("/auth")
-	auth.POST("/login", auth.LoginHandler(database))
-	auth.POST("/register", auth.RegisterHandler(database))
-	auth.POST("/logout", auth.LogoutHandler(database))
-	auth.GET("/user", auth.UserHandler(database))
-	auth.POST("/refresh", auth.RefreshHandler(database))
+	authGroup := v1.Group("/auth")
+	authGroup.POST("/login", auth.LoginHandler(database))
+	authGroup.POST("/register", auth.RegisterHandler(database))
+	authGroup.POST("/logout", auth.LogoutHandler(database))
+	authGroup.GET("/user", auth.UserHandler(database))
+	authGroup.POST("/refresh", auth.RefreshHandler(database))
 
 	r.Run(":8080")
 }
@@ -187,72 +184,6 @@ func searchAcronyms(c *gin.Context) {
 	c.JSON(http.StatusOK, acronyms)
 }
 
-
-
-
-/* ########################
-    #### Auth Routes #####
-    ##################### */
-
-func login(c *gin.Context) {
-	// Get the username and password from the request body
-	var loginRequest struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
-
-	// Validate the request body
-	if err := c.ShouldBindJSON(&loginRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
-
-	// Check if the user exists
-	var user db.User
-	if err := db.GetGormDB().Where("username = ?", loginRequest.Username).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
-		return
-	}
-
-	// Check if the password is correct
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
-		return
-	}
-	
-	// Generate a JWT token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
-	})
-	
-	// Sign the token
-	tokenString, err := token.SignedString([]byte("secret"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign token"})
-		return
-	}
-	
-	
-	
-	
-}
-
-func register(c *gin.Context) {
-
-}
-
-func logout(c *gin.Context) {
-
-}
-
-func user(c *gin.Context) {
-
-}
-
-func refresh(c *gin.Context) {
-
-}
 
 
 

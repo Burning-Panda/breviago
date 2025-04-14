@@ -14,14 +14,33 @@ var (
 	gormDB *gorm.DB
 )
 
+type Session struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `json:"user_id"`
+	Token     string    `gorm:"unique;index" json:"token"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type User struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
+	UUID      string    `gorm:"type:text;unique;index" json:"uuid"`
 	Username  string    `gorm:"unique" json:"username"`
 	Email     string    `gorm:"unique" json:"email"`
 	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Session   Session   `gorm:"foreignKey:UserID"`
+}
+
+type AuditLog struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `json:"user_id"`
+	Event     string    `gorm:"not null" json:"event"`
+	Action    string    `gorm:"not null" json:"action"`
+	Data      string    `gorm:"not null" json:"data"`
+	CreatedAt time.Time `gorm:"not null" json:"created_at"`
+	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
 }
 
 type Organization struct {
