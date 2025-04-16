@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"log"
 	"net/http"
 
@@ -9,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+var unprotectedRoutes = []string{"/", "/login", "/register", "/public"}
 
 func main() {
 	// Initialize database
@@ -23,20 +26,45 @@ func main() {
 	}()
 
 	r := gin.Default()
+	r.Use(auth.AuthenticationMiddleware(unprotectedRoutes))
+
+	// Serve static files from the public directory
+	r.Static("/public", "./public")
+
+	/* ########################################## */
+	/* ################# Website ################# */
+	/* ########################################## */
 
 	// Load HTML templates
-	r.LoadHTMLGlob("templates/*")
+	templates := template.Must(template.ParseGlob("templates/*.html"))
+	templates = template.Must(templates.ParseGlob("templates/components/*.html"))
+	r.SetHTMLTemplate(templates)
 
-	// Authentication routes
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "base.html", gin.H{})
+	})
 	r.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", gin.H{})
 	})
+	r.GET("/register", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "register.html", gin.H{})
+	})
+
 	r.POST("/login", auth.LoginHandler(database))
+	r.POST("/register", auth.RegisterHandler(database))
 
-	// Middleware
-	r.Use(auth.AuthMiddleware)
+	r.GET("/acronyms", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "acronyms.html", gin.H{
+			"Acronyms": []db.Acronym{
+				{ShortForm: "API", LongForm: "Application Programming Interface"},
+				{ShortForm: "HTTP", LongForm: "Hypertext Transfer Protocol"},
+			},
+		})
+	})
 
-	r.GET("/", getDefault)
+	/* ######################################### */
+	/* ################## API ################## */
+	/* ######################################### */
 
 	// API v1
 	v1 := r.Group("/api/v1")
@@ -57,19 +85,12 @@ func main() {
 	v1.GET("/acronyms/search", searchAcronyms)
 
 	authGroup := v1.Group("/auth")
-	authGroup.POST("/login", auth.LoginHandler(database))
-	authGroup.POST("/register", auth.RegisterHandler(database))
+	
 	authGroup.POST("/logout", auth.LogoutHandler(database))
 	authGroup.GET("/user", auth.UserHandler(database))
 	authGroup.POST("/refresh", auth.RefreshHandler(database))
 
 	r.Run(":8080")
-}
-
-func getDefault(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, World!",
-	})
 }
 
 func getAcronyms(c *gin.Context) {

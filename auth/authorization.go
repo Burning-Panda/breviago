@@ -3,8 +3,10 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -13,38 +15,51 @@ import (
 
 var jwtSecret = []byte("your-secret-key") // In production, use environment variable
 
-// AuthMiddleware is a middleware for Gin that checks if the user is authenticated
-func AuthMiddleware(c *gin.Context) {
-	// Skip authentication for login and public routes
-	if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/" {
+// AuthenticationMiddleware is a middleware for Gin that checks if the user is authenticated
+func AuthenticationMiddleware(unprotectedRoutes []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		for _, route := range unprotectedRoutes {
+			if strings.HasPrefix(c.Request.URL.Path, route) {
+				c.Next()
+				return
+			}
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			c.Abort()
+			return
+		}
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+
+		claims := jwt.MapClaims{}
+		parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return jwtSecret, nil
+		})
+		if err != nil || !parsedToken.Valid {
+			fmt.Printf("Auth failure from %s: %v\n", c.ClientIP(), err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.Abort()
+			return
+		}
+
+		if exp, ok := claims["exp"].(float64); ok {
+			if time.Now().Unix() > int64(exp) {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+				c.Abort()
+				return
+			}
+		}
+
+		c.Set("user", claims["user_id"])
 		c.Next()
-		return
 	}
-
-	// Get token from Authorization header
-	token := GetUserFromToken(c)
-	if token == "" {
-		c.Redirect(http.StatusFound, "/login")
-		c.Abort()
-		return
-	}
-
-	// Validate JWT token
-	claims := jwt.MapClaims{}
-	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
-	})
-
-	if err != nil || !parsedToken.Valid {
-		c.Redirect(http.StatusFound, "/login")
-		c.Abort()
-		return
-	}
-
-	// Set user in context
-	c.Set("user", claims["user_id"])
-	c.Next()
 }
+
 
 // AuthorizationMiddleware creates a middleware that checks permissions using OpenFGA
 func AuthorizationMiddleware(fgaClient *openfgaClient.OpenFgaClient, objectType string, relation string) gin.HandlerFunc {
@@ -90,20 +105,4 @@ func AuthorizationMiddleware(fgaClient *openfgaClient.OpenFgaClient, objectType 
 
 		c.Next()
 	}
-}
-
-// GetUserFromToken extracts user information from the Authorization header
-func GetUserFromToken(c *gin.Context) string {
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		return ""
-	}
-
-	// Assuming Bearer token format
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		return ""
-	}
-
-	return parts[1]
 }

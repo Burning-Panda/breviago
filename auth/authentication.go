@@ -11,14 +11,31 @@ import (
 	"gorm.io/gorm"
 )
 
-func IsAuthenticated(c *gin.Context) bool {
+func IsAuthenticated(c *gin.Context) {
+	// Allowed websites urls
+	requestedUrl := c.Request.URL.Path
+	if requestedUrl == "/login" || requestedUrl == "/register" {
+		c.Next()
+		return
+	}
+	if !checkAuthStatus(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		// redirect to login page
+		c.Redirect(http.StatusFound, "/login?redirectUrl=" + requestedUrl)
+		c.Abort()
+		return
+	}
+	c.Next()
+}
+
+func checkAuthStatus(c *gin.Context) bool {
 	token := c.GetHeader("Authorization")
 	if token == "" {
 		return false
 	}
 
 	claims := jwt.MapClaims{}
-	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
 		return jwtSecret, nil
 	})
 
@@ -108,15 +125,75 @@ func LoginHandler(database *gorm.DB) gin.HandlerFunc {
 		} else {
 			// Set token in cookie
 			c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
-			c.Redirect(http.StatusFound, "/")
+			// Get redirect url from URI
+			redirectUrl := c.Request.URL.Query().Get("redirectUrl")
+			if redirectUrl == "" {
+				redirectUrl = "/"
+			}
+			c.Redirect(http.StatusFound, redirectUrl)
 		}
 	}
 }
 
 func RegisterHandler(database *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-	}
+		contentType := c.Request.Header.Get("Content-Type")
 		
+		var username, password, email string
+		var user db.User
+		
+		if contentType == "application/json" {
+			// Handle JSON request
+			var registerRequest struct {
+				Username string `json:"username" binding:"required"`
+				Password string `json:"password" binding:"required"`
+				Email    string `json:"email" binding:"required"`
+			}
+
+			if err := c.ShouldBindJSON(&registerRequest); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+				return
+			}
+
+			username = registerRequest.Username
+			password = registerRequest.Password
+			email = registerRequest.Email
+		} else {
+			// Handle form submission
+			username = c.PostForm("username")
+			password = c.PostForm("password")
+			email = c.PostForm("email")
+		}
+
+		// Check if the user already exists
+		if err := database.Where("username = ?", username).First(&user).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+			return
+		}
+
+		// Hash the password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+			return
+		}
+
+		// Create the user
+		user = db.User{
+			Username: username,
+			Password: string(hashedPassword),
+			Email:    email,
+		}
+
+		// Save the user to the database
+		if err := database.Create(&user).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+			return
+		}
+
+		// Redirect to the login page
+		c.Redirect(http.StatusFound, "/login")
+	}
 }
 
 func LogoutHandler(database *gorm.DB) gin.HandlerFunc {
