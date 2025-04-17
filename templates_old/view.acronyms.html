@@ -1,0 +1,20 @@
+{{ define "content" }}
+    
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="border-4 border-dashed border-gray-200 rounded-lg p-4">
+                <h2 class="text-2xl font-bold mb-4">Acronyms</h2>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {{ range .Acronyms }}
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg font-medium text-gray-900">{{ .ShortForm }}</h3>
+                            <p class="mt-1 text-sm text-gray-500">{{ .LongForm }}</p>
+                        </div>
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+        </div>
+    </div>
+{{ end }} 

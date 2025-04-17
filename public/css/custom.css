@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-moss: 65, 66, 36;
+    --color-sage: 128, 116, 74;
+    --color-mist: 239, 234, 228;
+    --color-quartz: 199, 164, 126;
+    --color-terra: 138, 125, 74;
+  }
+}
+
+@layer utilities {
+  .text-moss {
+    color: rgb(var(--color-moss));
+  }
+  .bg-moss {
+    background-color: rgb(var(--color-moss));
+  }
+  .text-sage {
+    color: rgb(var(--color-sage));
+  }
+  .bg-sage {
+    background-color: rgb(var(--color-sage));
+  }
+  .text-mist {
+    color: rgb(var(--color-mist));
+  }
+  .bg-mist {
+    background-color: rgb(var(--color-mist));
+  }
+  .text-quartz {
+    color: rgb(var(--color-quartz));
+  }
+  .bg-quartz {
+    background-color: rgb(var(--color-quartz));
+  }
+  .text-terra {
+    color: rgb(var(--color-terra));
+  }
+  .bg-terra {
+    background-color: rgb(var(--color-terra));
+  }
+} 

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"slices"
+
 	"github.com/Burning-Panda/acronyms-vault/db"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -11,27 +13,34 @@ import (
 	"gorm.io/gorm"
 )
 
-func IsAuthenticated(c *gin.Context) {
-	// Allowed websites urls
-	requestedUrl := c.Request.URL.Path
-	if requestedUrl == "/login" || requestedUrl == "/register" {
+func IsAuthenticated(unprotectedRoutes []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Allowed websites urls
+		requestedUrl := c.Request.URL.Path
+		if slices.Contains(unprotectedRoutes, requestedUrl) {
+				c.Next()
+				return
+			}
+		if !checkAuthStatus(c) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			// redirect to login page
+			c.Redirect(http.StatusFound, "/login?redirectUrl=" + requestedUrl)
+			c.Abort()
+			return
+		}
 		c.Next()
-		return
 	}
-	if !checkAuthStatus(c) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		// redirect to login page
-		c.Redirect(http.StatusFound, "/login?redirectUrl=" + requestedUrl)
-		c.Abort()
-		return
-	}
-	c.Next()
 }
 
 func checkAuthStatus(c *gin.Context) bool {
+	// Check Authorization header first
 	token := c.GetHeader("Authorization")
 	if token == "" {
-		return false
+		// If no header, check cookie
+		token, _ = c.Cookie("token")
+		if token == "" {
+			return false
+		}
 	}
 
 	claims := jwt.MapClaims{}

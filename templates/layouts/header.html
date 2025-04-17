@@ -1,0 +1,40 @@
+{{ define "header" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ template "title" . }}</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="/public/css/custom.css" rel="stylesheet" type="text/tailwindcss">
+</head>
+<body>
+
+<header class="bg-terra shadow">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex">
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="/" class="text-xl font-bold text-mist">{{ .AppName }}</a>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <a href="/" class="border-transparent text-mist hover:text-quartz inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        Home
+                    </a>
+                    <a href="/acronyms" class="border-transparent text-mist hover:text-quartz inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        Acronyms
+                    </a>
+                </div>
+            </div>
+            <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                {{ if .User }}
+                    <span class="text-mist mr-4">{{ .User.Username }}</span>
+                    <a href="/logout" class="text-mist hover:text-quartz">Logout</a>
+                {{ else }}
+                    <a href="/login" class="text-mist hover:text-quartz">Login</a>
+                {{ end }}
+            </div>
+        </div>
+    </nav>
+</header>
+{{ end }}

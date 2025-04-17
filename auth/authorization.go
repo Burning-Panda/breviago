@@ -13,7 +13,8 @@ import (
 	openfgaClient "github.com/openfga/go-sdk/client"
 )
 
-var jwtSecret = []byte("your-secret-key") // In production, use environment variable
+// TODO: Use environment variable
+var jwtSecret = []byte("secret-key") // In production, use environment variable
 
 // AuthenticationMiddleware is a middleware for Gin that checks if the user is authenticated
 func AuthenticationMiddleware(unprotectedRoutes []string) gin.HandlerFunc {
@@ -34,7 +35,7 @@ func AuthenticationMiddleware(unprotectedRoutes []string) gin.HandlerFunc {
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 
 		claims := jwt.MapClaims{}
-		parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}

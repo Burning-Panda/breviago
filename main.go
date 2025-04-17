@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/Burning-Panda/acronyms-vault/auth"
 	"github.com/Burning-Panda/acronyms-vault/db"
@@ -11,7 +13,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var unprotectedRoutes = []string{"/", "/login", "/register", "/public"}
+const appName = "Breviago"
+
+var unprotectedRoutes = []string{"", "/", "/login", "/register", "/public", "/favicon.ico"}
 
 func main() {
 	// Initialize database
@@ -26,7 +30,14 @@ func main() {
 	}()
 
 	r := gin.Default()
-	r.Use(auth.AuthenticationMiddleware(unprotectedRoutes))
+
+	// Add debug middleware
+	r.Use(func(c *gin.Context) {
+		fmt.Printf("Request: %s %s\n", c.Request.Method, c.Request.URL.Path)
+		c.Next()
+	})
+
+	r.Use(auth.IsAuthenticated(unprotectedRoutes))
 
 	// Serve static files from the public directory
 	r.Static("/public", "./public")
@@ -35,19 +46,39 @@ func main() {
 	/* ################# Website ################# */
 	/* ########################################## */
 
-	// Load HTML templates
-	templates := template.Must(template.ParseGlob("templates/*.html"))
-	templates = template.Must(templates.ParseGlob("templates/components/*.html"))
-	r.SetHTMLTemplate(templates)
+	r.SetFuncMap(template.FuncMap{
+		"getCurrentYear": func() int {
+			return time.Now().Year()
+		},
+		"getAppName": func() string {
+			return appName
+		},
+	})
+
+	// Create a Template and parse files in order:
+	tmpl := template.New("").Funcs(r.FuncMap)
+	// parse base and partials
+	tmpl = template.Must(tmpl.ParseGlob("templates/layouts/*.html"))
+	// parse all views (they only define blocks)
+	tmpl = template.Must(tmpl.ParseGlob("templates/views/*.html"))
+
+	// Tell Gin to use this template
+	r.SetHTMLTemplate(tmpl)
 
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "base.html", gin.H{})
+		c.HTML(http.StatusOK, "index", gin.H{})
 	})
 	r.GET("/login", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "login.html", gin.H{})
+		fmt.Println("Rendering login page")
+		c.HTML(http.StatusOK, "login", gin.H{
+			"Request": c.Request,
+		})
 	})
 	r.GET("/register", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "register.html", gin.H{})
+		fmt.Println("Rendering register page")
+		c.HTML(http.StatusOK, "register", gin.H{
+			"Request": c.Request,
+		})
 	})
 
 	r.POST("/login", auth.LoginHandler(database))
@@ -85,7 +116,7 @@ func main() {
 	v1.GET("/acronyms/search", searchAcronyms)
 
 	authGroup := v1.Group("/auth")
-	
+
 	authGroup.POST("/logout", auth.LogoutHandler(database))
 	authGroup.GET("/user", auth.UserHandler(database))
 	authGroup.POST("/refresh", auth.RefreshHandler(database))
@@ -196,7 +227,7 @@ func searchAcronyms(c *gin.Context) {
 	query := c.Query("query")
 	var acronyms []db.Acronym
 
-	if err := db.GetGormDB().Where("short_form ILIKE ? OR long_form ILIKE ?", 
+	if err := db.GetGormDB().Where("short_form ILIKE ? OR long_form ILIKE ?",
 		"%"+query+"%", "%"+query+"%").Find(&acronyms).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search acronyms"})
 		return
@@ -204,7 +235,3 @@ func searchAcronyms(c *gin.Context) {
 
 	c.JSON(http.StatusOK, acronyms)
 }
-
-
-
-
