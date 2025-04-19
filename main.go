@@ -11,11 +11,45 @@ import (
 	"github.com/Burning-Panda/acronyms-vault/db"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 const appName = "Breviago"
 
-var unprotectedRoutes = []string{"", "/", "/login", "/register", "/public", "/favicon.ico"}
+var unprotectedRoutes = []string{"", "/", "/login", "/register", "/public", "/favicon.ico",
+	// Temp
+	"/home",
+}
+
+func initApplication(database *gorm.DB) error {
+	// Check if admin user exists
+	var adminUser db.User
+	if err := database.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Create admin user
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+			if err != nil {
+				return fmt.Errorf("failed to hash admin password: %v", err)
+			}
+
+			adminUser = db.User{
+				Username: "admin",
+				Password: string(hashedPassword),
+				Email:    "admin@breviago.com",
+			}
+
+			if err := database.Create(&adminUser).Error; err != nil {
+				return fmt.Errorf("failed to create admin user: %v", err)
+			}
+			log.Println("Created default admin user")
+		} else {
+			return fmt.Errorf("failed to check for admin user: %v", err)
+		}
+	}
+
+	return nil
+}
 
 func main() {
 	// Initialize database
@@ -29,6 +63,11 @@ func main() {
 		}
 	}()
 
+	// Initialize application
+	if err := initApplication(database); err != nil {
+		log.Fatalf("Failed to initialize application: %v", err)
+	}
+
 	r := gin.Default()
 
 	// Add debug middleware
@@ -38,6 +77,7 @@ func main() {
 	})
 
 	r.Use(auth.IsAuthenticated(unprotectedRoutes))
+	r.Use(auth.AuthorizationMiddleware(auth.InitFgaClient()))
 
 	// Serve static files from the public directory
 	r.Static("/public", "./public")
@@ -59,6 +99,7 @@ func main() {
 	tmpl := template.New("").Funcs(r.FuncMap)
 	// parse base and partials
 	tmpl = template.Must(tmpl.ParseGlob("templates/layouts/*.html"))
+	tmpl = template.Must(tmpl.ParseGlob("templates/components/*.html"))
 	// parse all views (they only define blocks)
 	tmpl = template.Must(tmpl.ParseGlob("templates/views/*.html"))
 
@@ -66,7 +107,7 @@ func main() {
 	r.SetHTMLTemplate(tmpl)
 
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index", gin.H{})
+		c.HTML(http.StatusOK, "index_unauthenticated", gin.H{})
 	})
 	r.GET("/login", func(c *gin.Context) {
 		fmt.Println("Rendering login page")
@@ -81,8 +122,16 @@ func main() {
 		})
 	})
 
+	r.GET("/home", func(c *gin.Context) {
+		fmt.Println("Rendering index page")
+		c.HTML(http.StatusOK, "index", gin.H{})
+	})
+
 	r.POST("/login", auth.LoginHandler(database))
 	r.POST("/register", auth.RegisterHandler(database))
+
+
+	
 
 	r.GET("/acronyms", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "acronyms.html", gin.H{

@@ -2,37 +2,50 @@ model
   schema 1.1
 type user
 
-# Organizations represent groups of users.
+# Organizations represent groups of users with hierarchical structure
 type organization
   relations
-    # Members belonging to the organization.
+    # Members belonging to the organization
     define member: [user]
-    # Optional: Administrators within the organization.
+    # Administrators within the organization
     define admin: [user]
+    # Parent organization in the hierarchy
+    define parent: [organization]
+    # Access to resources from child organizations
+    define can_access_child_resources: member or admin or can_access_child_resources from parent
 
-# Groups allow you to organize users and organizational members.
+# Groups allow you to organize users and organizational members
 type group
   relations
     define member: [user, organization#member]
+    define admin: [user, organization#admin]
 
-# Folders act as containers that might be owned by a user or organization.
+# Folders act as containers that might be owned by a user or organization
 type folder
   relations
     define owner: [user, organization]
     define parent: [folder]
     define granted: [user, organization, group]
+    define restricted: [user, organization, group]
     define public: [user:*]
-    define can_create_file: owner
+    define can_create_file: owner or admin from owner
+    define can_manage: owner or admin from owner
     define viewer: [user, user:*, group#member, organization#member] or owner or viewer from parent or public
+    define can_read: viewer or owner or viewer from parent or can_access_child_resources from owner
+    define can_write: owner or admin from owner or can_access_child_resources from owner
+    define can_share: owner or admin from owner
 
-# Documents represent content within folders.
+# Documents represent content within folders
 type document
   relations
     define owner: [user, organization]
     define parent: [folder]
     define granted: [user, organization, group]
+    define restricted: [user, organization, group]
     define public: [user:*]
+    define can_manage: owner or admin from owner
     define viewer: [user, user:*, group#member, organization#member] or owner or viewer from parent or public
-    define can_read: viewer or owner or viewer from parent
-    define can_write: owner or viewer from parent
+    define can_read: viewer or owner or viewer from parent or can_access_child_resources from owner
+    define can_write: owner or admin from owner or can_access_child_resources from owner
+    define can_share: owner or admin from owner
 

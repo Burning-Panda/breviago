@@ -9,6 +9,10 @@
     --color-mist: 239, 234, 228;
     --color-quartz: 199, 164, 126;
     --color-terra: 138, 125, 74;
+    --color-dark-bg: 22, 22, 24;
+    --color-dark-surface: 33, 33, 36;
+    --color-dark-text: 255, 255, 255;
+    --color-dark-text-secondary: 129, 129, 129;
   }
 }
 
@@ -42,5 +46,17 @@
   }
   .bg-terra {
     background-color: rgb(var(--color-terra));
+  }
+  .bg-dark {
+    background-color: rgb(var(--color-dark-bg));
+  }
+  .bg-dark-surface {
+    background-color: rgb(var(--color-dark-surface));
+  }
+  .text-dark {
+    color: rgb(var(--color-dark-text));
+  }
+  .text-dark-secondary {
+    color: rgb(var(--color-dark-text-secondary));
   }
 } 

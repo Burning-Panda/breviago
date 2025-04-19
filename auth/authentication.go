@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,9 +19,9 @@ func IsAuthenticated(unprotectedRoutes []string) gin.HandlerFunc {
 		// Allowed websites urls
 		requestedUrl := c.Request.URL.Path
 		if slices.Contains(unprotectedRoutes, requestedUrl) {
-				c.Next()
-				return
-			}
+			c.Next()
+			return
+		}
 		if !checkAuthStatus(c) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			// redirect to login page
@@ -44,9 +45,13 @@ func checkAuthStatus(c *gin.Context) bool {
 	}
 
 	claims := jwt.MapClaims{}
-	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return jwtSecret, nil
 	})
+	
 
 	if err != nil || !parsedToken.Valid {
 		return false
@@ -217,5 +222,75 @@ func UserHandler(database *gorm.DB) gin.HandlerFunc {
 
 func RefreshHandler(database *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Check if the request is a form submission or JSON
+		contentType := c.Request.Header.Get("Content-Type")
+
+		if contentType == "application/json" {
+			// Handle JSON request
+			var refreshRequest struct {
+				RefreshToken string `json:"refresh_token" binding:"required"`
+			}
+
+			if err := c.ShouldBindJSON(&refreshRequest); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+				return
+			}
+			// Check if the refresh token is valid
+			var user db.User
+			if err := database.Where("token = ?", refreshRequest.RefreshToken).First(&user).Error; err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+				return
+			}
+
+			// Generate a new access token
+			accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"user_id":  user.UUID,
+				"username": user.Username,
+				"exp":      time.Now().Add(time.Minute * 15).Unix(),
+			})
+
+			accessTokenString, err := accessToken.SignedString(jwtSecret)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign token"})
+				return
+			}
+			
+			c.JSON(http.StatusOK, gin.H{"token": accessTokenString})
+		} else {
+			// Handle form submission
+			refreshToken := c.PostForm("refresh_token")
+
+			// Check if the refresh token is valid
+			var user db.User
+			if err := database.Where("token = ?", refreshToken).First(&user).Error; err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+				return
+			}
+
+			// Generate a new access token
+			accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"user_id":  user.UUID,
+				"username": user.Username,
+				"exp":      time.Now().Add(time.Minute * 15).Unix(),
+			})
+
+			accessTokenString, err := accessToken.SignedString(jwtSecret)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to sign token"})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{"token": accessTokenString})
+
+			// Set token in cookie
+			c.SetCookie("token", accessTokenString, 3600*24, "/", "", false, true)
+
+			// Get redirect url from URI
+			redirectUrl := c.Request.URL.Query().Get("redirectUrl")
+			if redirectUrl == "" {
+				redirectUrl = "/"
+			}
+			c.Redirect(http.StatusFound, redirectUrl)
+		}
 	}
 }

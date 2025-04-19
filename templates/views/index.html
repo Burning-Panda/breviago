@@ -1,6 +1,14 @@
+{{ define "index" }}
+{{ template "layouts/header" . }}
+<main class="flex-1 pl-64">
+    Test
+</main>
+{{ template "layouts/footer" . }}
+{{ end }}
+
 {{define "title"}}Home - {{ .getAppName }}{{end}}
-{{define "index"}}
-    {{ template "layouts/header" . }}
+{{define "index_unauthenticated"}}
+    {{ template "layouts/header_unauthenticated" . }}
 
     <!-- Hero Section -->
     <div class="bg-mist">
@@ -126,5 +134,5 @@
             </div>
         </div>
     </div>
-    {{ template "layouts/footer" . }}
+    {{ template "layouts/footer_unauthenticated" . }}
 {{ end }}

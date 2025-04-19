@@ -1,0 +1,31 @@
+{{ define "components/homepage_hero" }}
+<section class="pt-32 pb-20 px-4">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <div class="text-left">
+        <h2 class="text-lg font-medium text-[#E07A5F] mb-2">Acronym Management Platform</h2>
+        <h1 class="text-3xl md:text-4xl font-medium text-[#3D405B] mb-4">
+          Simplify Your Team's Communication
+        </h1>
+        <p class="text-lg text-[#3D405B]/80 mb-8 max-w-xl">
+          Find, create, and manage acronyms effortlessly. The perfect platform for individuals and organizations to maintain clarity in their communications.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button class="bg-[#E07A5F] text-[#F4F1DE] px-6 py-3 rounded text-base font-medium transition-colors hover:bg-[#81B29A] flex items-center justify-center">
+            Get Started Free
+            <NavArrowRight class="ml-2 h-5 w-5" />
+          </button>
+          <button class="border-2 border-[#E07A5F] text-[#E07A5F] px-6 py-3 rounded text-base font-medium transition-colors hover:border-[#81B29A] hover:text-[#81B29A]">
+            Watch Demo
+          </button>
+        </div>
+      </div>
+      <div class="relative h-[400px] rounded-lg overflow-hidden shadow-xl">
+        <img 
+          src="https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=800&q=80" 
+          alt="AcroFlow Dashboard Interface"
+          class="object-cover w-full h-full"
+        />
+      </div>
+    </div>
+  </section>
+  {{ end }}

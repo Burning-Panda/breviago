@@ -77,6 +77,7 @@ The Brevido API serves as a centralized service to:
 
 - Go 1.24+
 - Docker (optional, for containerization)
+- openFGA
 - Git (optional, for cloning the repository)
 - Air (optional, for development)
 
@@ -93,12 +94,18 @@ The Brevido API serves as a centralized service to:
    go build -o acronyms-system-api
    ```
 
-3. **Run the Project:**
+3. **Install OpenFga and run it**
+  ```bash
+  brew install openfga
+  openfga run --playground-port=8079 --grpc-addr="0.0.0.0:8078"
+  ```
+
+4. **Run the Project:**
    ```bash
    ./acronyms-system-api
    ```
 
-4. **Access the Admin Panel:**
+5. **Access the Admin Panel:**
    ```bash
    http://localhost:8080/admin
    ```
