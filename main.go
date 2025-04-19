@@ -147,7 +147,7 @@ func main() {
 	authGroup.GET("/user", auth.UserHandler(database))
 	authGroup.POST("/refresh", auth.RefreshHandler(database))
 
-	r.Run(":8080")
+	r.Run(":8060")
 }
 
 func getAcronyms(c *gin.Context) {

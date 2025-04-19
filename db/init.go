@@ -8,10 +8,6 @@ import (
 )
 
 func InitDB(db *gorm.DB) {
-	db.AutoMigrate(&User{}, &Organization{}, &OrganizationMember{}, &Group{}, &GroupMember{}, &Folder{}, &FolderGrant{}, &Document{}, &DocumentGrant{})
-	db.AutoMigrate(&Acronym{}, &AcronymCategory{}, &Category{}, &Label{})
-	db.AutoMigrate(&Session{}, &AuditLog{})
-
 	var adminUser User
 	if err := db.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -79,6 +75,7 @@ func InitDB(db *gorm.DB) {
 		if err == gorm.ErrRecordNotFound {
 			// Create Breviago acronym
 			breviagoAcronym = Acronym{
+				UUID:        "00000000-0000-0000-0000-000000000000",
 				ShortForm:   "breviago",
 				LongForm:    "Is a application for remembering abbreviations",
 				Description: "The main application for managing and remembering abbreviations",
