@@ -11,7 +11,6 @@ import (
 	"github.com/Burning-Panda/acronyms-vault/db"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -24,29 +23,7 @@ var unprotectedRoutes = []string{"", "/", "/login", "/register", "/public", "/fa
 
 func initApplication(database *gorm.DB) error {
 	// Check if admin user exists
-	var adminUser db.User
-	if err := database.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// Create admin user
-			hashedPassword, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
-			if err != nil {
-				return fmt.Errorf("failed to hash admin password: %v", err)
-			}
-
-			adminUser = db.User{
-				Username: "admin",
-				Password: string(hashedPassword),
-				Email:    "admin@breviago.com",
-			}
-
-			if err := database.Create(&adminUser).Error; err != nil {
-				return fmt.Errorf("failed to create admin user: %v", err)
-			}
-			log.Println("Created default admin user")
-		} else {
-			return fmt.Errorf("failed to check for admin user: %v", err)
-		}
-	}
+	db.InitDB(database)
 
 	return nil
 }

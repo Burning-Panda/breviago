@@ -1,0 +1,66 @@
+{
+  "writes": {
+    "tuple_keys": [
+      {
+        "user": "user:admin",
+        "relation": "admin",
+        "object": "organization:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "admin",
+        "object": "group:all"
+      },
+      {
+        "user": "user:admin",
+        "relation": "owner",
+        "object": "folder:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "owner",
+        "object": "document:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_manage",
+        "object": "folder:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_manage",
+        "object": "document:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_read",
+        "object": "folder:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_read",
+        "object": "document:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_write",
+        "object": "folder:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_write",
+        "object": "document:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_share",
+        "object": "folder:root"
+      },
+      {
+        "user": "user:admin",
+        "relation": "can_share",
+        "object": "document:root"
+      }
+    ]
+  }
+}
