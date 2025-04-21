@@ -62,31 +62,13 @@ type OrganizationMember struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
-type Group struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:text" json:"uuid"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-type GroupMember struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
-	GroupID   uint      `json:"group_id"`
-	UserID    uint      `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 type Folder struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
 	UUID        string    `gorm:"type:text" json:"uuid"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	OwnerID     uint      `json:"owner_id"`
-	OwnerType   string    `json:"owner_type"` // "user" or "organization"
+	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
 	ParentID    *uint     `json:"parent_id"`  // Nullable for root folders
 	IsPublic    bool      `json:"is_public"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -109,7 +91,7 @@ type Document struct {
 	Name        string    `json:"name"`
 	Content     string    `json:"content"`
 	OwnerID     uint      `json:"owner_id"`
-	OwnerType   string    `json:"owner_type"` // "user" or "organization"
+	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
 	FolderID    uint      `json:"folder_id"`
 	IsPublic    bool      `json:"is_public"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -126,13 +108,14 @@ type DocumentGrant struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-
 type Acronym struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
 	UUID        string    `gorm:"type:uuid" json:"uuid"`
 	ShortForm   string    `json:"short_form"`
 	LongForm    string    `json:"long_form"`
 	Description string    `json:"description"`
+	OwnerID     uint      `json:"owner_id"`
+	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -178,8 +161,6 @@ func GenerateUUID(tx *gorm.DB, model UUIDable) error {
 func (u *User) SetUUID(uuid string) { u.UUID = uuid }
 func (o *Organization) SetUUID(uuid string) { o.UUID = uuid }
 func (om *OrganizationMember) SetUUID(uuid string) { om.UUID = uuid }
-func (g *Group) SetUUID(uuid string) { g.UUID = uuid }
-func (gm *GroupMember) SetUUID(uuid string) { gm.UUID = uuid }
 func (f *Folder) SetUUID(uuid string) { f.UUID = uuid }
 func (fg *FolderGrant) SetUUID(uuid string) { fg.UUID = uuid }
 func (d *Document) SetUUID(uuid string) { d.UUID = uuid }
@@ -198,14 +179,6 @@ func (o *Organization) BeforeCreate(tx *gorm.DB) error {
 
 func (om *OrganizationMember) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, om)
-}
-
-func (g *Group) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, g)
-}
-
-func (gm *GroupMember) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, gm)
 }
 
 func (f *Folder) BeforeCreate(tx *gorm.DB) error {
@@ -247,8 +220,6 @@ func UpdateTimestamp(tx *gorm.DB, model Timestampable) error {
 func (u *User) SetUpdatedAt(t time.Time) { u.UpdatedAt = t }
 func (o *Organization) SetUpdatedAt(t time.Time) { o.UpdatedAt = t }
 func (om *OrganizationMember) SetUpdatedAt(t time.Time) { om.UpdatedAt = t }
-func (g *Group) SetUpdatedAt(t time.Time) { g.UpdatedAt = t }
-func (gm *GroupMember) SetUpdatedAt(t time.Time) { gm.UpdatedAt = t }
 func (f *Folder) SetUpdatedAt(t time.Time) { f.UpdatedAt = t }
 func (fg *FolderGrant) SetUpdatedAt(t time.Time) { fg.UpdatedAt = t }
 func (d *Document) SetUpdatedAt(t time.Time) { d.UpdatedAt = t }
@@ -269,14 +240,6 @@ func (o *Organization) BeforeUpdate(tx *gorm.DB) error {
 
 func (om *OrganizationMember) BeforeUpdate(tx *gorm.DB) error {
 	return UpdateTimestamp(tx, om)
-}
-
-func (g *Group) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, g)
-}
-
-func (gm *GroupMember) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, gm)
 }
 
 func (f *Folder) BeforeUpdate(tx *gorm.DB) error {
@@ -326,8 +289,6 @@ func GetGormDB() *gorm.DB {
 			&User{},
 			&Organization{},
 			&OrganizationMember{},
-			&Group{},
-			&GroupMember{},
 			&Folder{},
 			&FolderGrant{},
 			&Document{},

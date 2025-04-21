@@ -28,6 +28,12 @@ func InitDB(db *gorm.DB) {
 				fmt.Printf("failed to create admin user: %v", err)
 				return
 			}
+			
+			// Update the user's UUID to be a default UUID for easier testing
+			if err := db.Model(&User{}).Where("email= ?", "admin@breviago.com").Update("uuid", "00000000-0000-0000-0000-000000000000").Error; err != nil {
+				fmt.Printf("failed to update admin user UUID: %v", err)
+				return
+			}
 			fmt.Println("Created default admin user")
 		} else {
 			fmt.Printf("failed to check for admin user: %v", err)

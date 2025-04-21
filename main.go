@@ -147,6 +147,18 @@ func main() {
 	authGroup.GET("/user", auth.UserHandler(database))
 	authGroup.POST("/refresh", auth.RefreshHandler(database))
 
+	// Routes for API
+	/*
+GET    /api/acronyms              → list all
+POST   /api/acronyms              → create new
+GET    /api/acronyms/{id}         → detail fragment
+PUT    /api/acronyms/{id}         → update
+DELETE /api/acronyms/{id}         → delete
+GET    /api/acronyms/{id}/share   → share‑modal fragment
+GET    /api/acronyms?tag={tag}    → list filtered by tag 
+
+	*/
+
 	r.Run(":8060")
 }
 
