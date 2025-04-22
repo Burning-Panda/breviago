@@ -31,6 +31,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Session   Session   `gorm:"foreignKey:UserID"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type AuditLog struct {
@@ -41,6 +42,7 @@ type AuditLog struct {
 	Data      string    `gorm:"not null" json:"data"`
 	CreatedAt time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Organization struct {
@@ -50,6 +52,7 @@ type Organization struct {
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type OrganizationMember struct {
@@ -60,6 +63,7 @@ type OrganizationMember struct {
 	IsAdmin        bool      `json:"is_admin"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Folder struct {
@@ -73,6 +77,7 @@ type Folder struct {
 	IsPublic    bool      `json:"is_public"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type FolderGrant struct {
@@ -83,6 +88,7 @@ type FolderGrant struct {
 	GranteeType string  `json:"grantee_type"` // "user", "organization", or "group"
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Document struct {
@@ -96,6 +102,7 @@ type Document struct {
 	IsPublic    bool      `json:"is_public"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type DocumentGrant struct {
@@ -106,6 +113,7 @@ type DocumentGrant struct {
 	GranteeType string    `json:"grantee_type"` // "user", "organization", or "group"
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Acronym struct {
@@ -118,6 +126,7 @@ type Acronym struct {
 	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Category struct {
@@ -127,6 +136,7 @@ type Category struct {
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Label struct {
@@ -135,6 +145,7 @@ type Label struct {
 	Label     string    `json:"label"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type AcronymCategory struct {
@@ -144,6 +155,7 @@ type AcronymCategory struct {
 	CategoryID uint      `json:"category_id"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 // UUIDable interface for models that need UUID generation
@@ -205,75 +217,6 @@ func (c *Category) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, c)
 }
 
-// Timestampable interface for models that need timestamp updates
-type Timestampable interface {
-	SetUpdatedAt(time.Time)
-}
-
-// UpdateTimestamp updates the UpdatedAt field for any model that implements Timestampable
-func UpdateTimestamp(tx *gorm.DB, model Timestampable) error {
-	model.SetUpdatedAt(time.Now())
-	return nil
-}
-
-// Implement Timestampable for all models that need timestamp updates
-func (u *User) SetUpdatedAt(t time.Time) { u.UpdatedAt = t }
-func (o *Organization) SetUpdatedAt(t time.Time) { o.UpdatedAt = t }
-func (om *OrganizationMember) SetUpdatedAt(t time.Time) { om.UpdatedAt = t }
-func (f *Folder) SetUpdatedAt(t time.Time) { f.UpdatedAt = t }
-func (fg *FolderGrant) SetUpdatedAt(t time.Time) { fg.UpdatedAt = t }
-func (d *Document) SetUpdatedAt(t time.Time) { d.UpdatedAt = t }
-func (dg *DocumentGrant) SetUpdatedAt(t time.Time) { dg.UpdatedAt = t }
-func (a *Acronym) SetUpdatedAt(t time.Time) { a.UpdatedAt = t }
-func (c *Category) SetUpdatedAt(t time.Time) { c.UpdatedAt = t }
-func (l *Label) SetUpdatedAt(t time.Time) { l.UpdatedAt = t }
-func (ac *AcronymCategory) SetUpdatedAt(t time.Time) { ac.UpdatedAt = t }
-
-// BeforeUpdate hooks using the generic UpdateTimestamp function
-func (u *User) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, u)
-}
-
-func (o *Organization) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, o)
-}
-
-func (om *OrganizationMember) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, om)
-}
-
-func (f *Folder) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, f)
-}
-
-func (fg *FolderGrant) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, fg)
-}
-
-func (d *Document) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, d)
-}
-
-func (dg *DocumentGrant) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, dg)
-}
-
-func (a *Acronym) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, a)
-}
-
-func (c *Category) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, c)
-}
-
-func (l *Label) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, l)
-}
-
-func (ac *AcronymCategory) BeforeUpdate(tx *gorm.DB) error {
-	return UpdateTimestamp(tx, ac)
-}
-
 func GetGormDB() *gorm.DB {
 	if gormDB == nil {
 		var err error
@@ -293,6 +236,10 @@ func GetGormDB() *gorm.DB {
 			&FolderGrant{},
 			&Document{},
 			&DocumentGrant{},
+			&Acronym{},
+			&Category{},
+			&Label{},
+			&AcronymCategory{},
 		)
 		if err != nil {
 			log.Fatal("Failed to migrate database:", err)

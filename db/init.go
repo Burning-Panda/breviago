@@ -2,12 +2,16 @@ package db
 
 import (
 	"fmt"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 func InitDB(db *gorm.DB) {
+	start := time.Now()
+	fmt.Println("Initializing database...")
+
 	var adminUser User
 	if err := db.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -144,5 +148,5 @@ func InitDB(db *gorm.DB) {
 		}
 	}
 
-	fmt.Println("Database initialized successfully")
+	fmt.Printf("Database initialized successfully in %s\n", time.Since(start))
 }

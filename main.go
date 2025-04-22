@@ -70,6 +70,13 @@ func main() {
 		"getAppName": func() string {
 			return appName
 		},
+		"getRelatedAcronyms": func(acronyms []db.Acronym) []db.Acronym {
+			mockRelatedAcronyms := []db.Acronym{
+				{ShortForm: "API", LongForm: "Application Programming Interface"},
+				{ShortForm: "HTTP", LongForm: "Hypertext Transfer Protocol"},
+			}
+			return mockRelatedAcronyms
+		},
 	})
 
 	// Create a Template and parse files in order:
