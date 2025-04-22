@@ -61,9 +61,6 @@ func main() {
 	r.Use(auth.IsAuthenticated(unprotectedRoutes))
 	r.Use(auth.AuthorizationMiddleware(auth.InitFgaClient()))
 
-	// Serve static files from the public directory
-	r.Static("/public", "./public")
-
 	/* ########################################## */
 	/* ################# Website ################# */
 	/* ########################################## */
@@ -104,7 +101,8 @@ func main() {
 	r.SetHTMLTemplate(tmpl)
 
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index_unauthenticated", gin.H{})
+		//c.HTML(http.StatusOK, "index_unauthenticated", gin.H{})
+		c.HTML(http.StatusOK, "views/test", gin.H{})
 	})
 	r.GET("/login", func(c *gin.Context) {
 		fmt.Println("Rendering login page")
