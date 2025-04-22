@@ -88,13 +88,13 @@ func InitDB(db *gorm.DB) {
 
 	// Check if Breviago acronym exists
 	var breviagoAcronym Acronym
-	if err := db.Where("short_form = ?", "breviago").First(&breviagoAcronym).Error; err != nil {
+	if err := db.Where("acronym = ?", "breviago").First(&breviagoAcronym).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			// Create Breviago acronym
 			breviagoAcronym = Acronym{
 				UUID:        "00000000-0000-0000-0000-000000000000",
-				ShortForm:   "breviago",
-				LongForm:    "Is a application for remembering abbreviations",
+				Acronym:     "breviago",
+				Meaning:     "Is a application for remembering abbreviations",
 				Description: "The main application for managing and remembering abbreviations",
 			}
 

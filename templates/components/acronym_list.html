@@ -22,11 +22,8 @@
           <p class="text-sm font-medium mb-1">{{ .Meaning }}</p>
           <p class="text-sm line-clamp-2 mb-2">{{ .Description }}</p>
           <div class="flex flex-wrap gap-2 items-center">
-            {{ range first 3 .Tags }}
+            {{ range slice .Tags 0 3 }}
               <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100">{{ . }}</span>
-            {{ end }}
-            {{ if gt (len .Tags) 3 }}
-              <span class="text-xs">+{{ sub (len .Tags) 3 }} more</span>
             {{ end }}
             <span class="ml-auto text-xs text-gray-500">{{ .UpdatedAt }}</span>
           </div>

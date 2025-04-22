@@ -119,8 +119,8 @@ type DocumentGrant struct {
 type Acronym struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
 	UUID        string    `gorm:"type:uuid" json:"uuid"`
-	ShortForm   string    `json:"short_form"`
-	LongForm    string    `json:"long_form"`
+	Acronym     string    `json:"acronym"`
+	Meaning     string    `json:"meaning"`
 	Description string    `json:"description"`
 	OwnerID     uint      `json:"owner_id"`
 	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"

@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Burning-Panda/acronyms-vault/auth"
@@ -53,6 +54,10 @@ func main() {
 		c.Next()
 	})
 
+	// Serve static files from the public directory
+	r.Static("/public", "./public")
+
+	// Add authentication middleware after static files
 	r.Use(auth.IsAuthenticated(unprotectedRoutes))
 	r.Use(auth.AuthorizationMiddleware(auth.InitFgaClient()))
 
@@ -63,7 +68,11 @@ func main() {
 	/* ################# Website ################# */
 	/* ########################################## */
 
-	r.SetFuncMap(template.FuncMap{
+	// Create a Template and parse files in order:
+	tmpl := template.New("")
+	
+	// Add functions to the template
+	tmpl.Funcs(template.FuncMap{
 		"getCurrentYear": func() int {
 			return time.Now().Year()
 		},
@@ -72,15 +81,19 @@ func main() {
 		},
 		"getRelatedAcronyms": func(acronyms []db.Acronym) []db.Acronym {
 			mockRelatedAcronyms := []db.Acronym{
-				{ShortForm: "API", LongForm: "Application Programming Interface"},
-				{ShortForm: "HTTP", LongForm: "Hypertext Transfer Protocol"},
+				{Acronym: "API", Meaning: "Application Programming Interface"},
+				{Acronym: "HTTP", Meaning: "Hypertext Transfer Protocol"},
 			}
 			return mockRelatedAcronyms
 		},
+		"join": func(strs []string, sep string) string {
+			return strings.Join(strs, sep)
+		},
+		"sub": func(a, b int) int {
+			return a - b
+		},
 	})
 
-	// Create a Template and parse files in order:
-	tmpl := template.New("").Funcs(r.FuncMap)
 	// parse base and partials
 	tmpl = template.Must(tmpl.ParseGlob("templates/layouts/*.html"))
 	tmpl = template.Must(tmpl.ParseGlob("templates/components/*.html"))
@@ -120,8 +133,8 @@ func main() {
 	r.GET("/acronyms", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "acronyms.html", gin.H{
 			"Acronyms": []db.Acronym{
-				{ShortForm: "API", LongForm: "Application Programming Interface"},
-				{ShortForm: "HTTP", LongForm: "Hypertext Transfer Protocol"},
+				{Acronym: "API", Meaning: "Application Programming Interface"},
+				{Acronym: "HTTP", Meaning: "Hypertext Transfer Protocol"},
 			},
 		})
 	})

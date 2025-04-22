@@ -86,10 +86,10 @@ func InsertAcronym(acronym *Acronym) error {
 	}
 	
 	res, err := database.Exec(
-		"INSERT INTO acronyms (uuid, short_form, long_form, description) VALUES (?, ?, ?, ?)",
+		"INSERT INTO acronyms (uuid, acronym, meaning, description) VALUES (?, ?, ?, ?)",
 		acronym.UUID,
-		acronym.ShortForm,
-		acronym.LongForm,
+		acronym.Acronym,
+		acronym.Meaning,
 		acronym.Description,
 	)
 	if err != nil {
@@ -102,13 +102,13 @@ func InsertAcronym(acronym *Acronym) error {
 	}
 
 	return database.QueryRow(
-		"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE id = ?", 
+		"SELECT id, uuid, acronym, meaning, description, created_at, updated_at FROM acronyms WHERE id = ?", 
 		id,
 	).Scan(
 		&acronym.ID,
 		&acronym.UUID,
-		&acronym.ShortForm,
-		&acronym.LongForm,
+		&acronym.Acronym,
+		&acronym.Meaning,
 		&acronym.Description,
 		&acronym.CreatedAt,
 		&acronym.UpdatedAt,
@@ -128,7 +128,7 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 
 	// Prepare the insert statement
 	stmt, err := tx.Prepare(
-		"INSERT INTO acronyms (uuid, short_form, long_form, description) VALUES (?, ?, ?, ?)",
+		"INSERT INTO acronyms (uuid, acronym, meaning, description) VALUES (?, ?, ?, ?)",
 	)
 	if err != nil {
 		return nil, err
@@ -144,8 +144,8 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 
 		res, err := stmt.Exec(
 			acronyms[i].UUID,
-			acronyms[i].ShortForm,
-			acronyms[i].LongForm,
+			acronyms[i].Acronym,
+			acronyms[i].Meaning,
 			acronyms[i].Description,
 		)
 		if err != nil {
@@ -159,13 +159,13 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 
 		// Update the acronym with the new ID and timestamps
 		err = tx.QueryRow(
-			"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE id = ?",
+			"SELECT id, uuid, acronym, meaning, description, created_at, updated_at FROM acronyms WHERE id = ?",
 			id,
 		).Scan(
 			&acronyms[i].ID,
 			&acronyms[i].UUID,
-			&acronyms[i].ShortForm,
-			&acronyms[i].LongForm,
+			&acronyms[i].Acronym,
+			&acronyms[i].Meaning,
 			&acronyms[i].Description,
 			&acronyms[i].CreatedAt,
 			&acronyms[i].UpdatedAt,
@@ -187,7 +187,7 @@ func SearchAcronyms(query string) ([]Acronym, error) {
 	database := GetDB()
 
 	rows, err := database.Query(
-		"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE short_form LIKE ? OR long_form LIKE ? OR description LIKE ?",
+		"SELECT id, uuid, acronym, meaning, description, created_at, updated_at FROM acronyms WHERE acronym LIKE ? OR meaning LIKE ? OR description LIKE ?",
 		fmt.Sprintf("%%%s%%", query),
 		fmt.Sprintf("%%%s%%", query),
 		fmt.Sprintf("%%%s%%", query),
@@ -204,8 +204,8 @@ func SearchAcronyms(query string) ([]Acronym, error) {
 		err := rows.Scan(
 			&acronym.ID,
 			&acronym.UUID,
-			&acronym.ShortForm,
-			&acronym.LongForm,
+			&acronym.Acronym,
+			&acronym.Meaning,
 			&acronym.Description,
 			&acronym.CreatedAt,
 			&acronym.UpdatedAt,
