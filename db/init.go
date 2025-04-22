@@ -12,6 +12,13 @@ func InitDB(db *gorm.DB) {
 	start := time.Now()
 	fmt.Println("Initializing database...")
 
+	// Set database to WAL mode if not already
+	if err := db.Exec("PRAGMA journal_mode = WAL").Error; err != nil {
+		fmt.Printf("failed to set database to WAL mode: %v", err)
+		return
+	}
+
+	// Check if admin user exists
 	var adminUser User
 	if err := db.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
