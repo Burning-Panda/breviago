@@ -1,0 +1,415 @@
+{{ define "views/acronyms" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acronym Management</title>
+    <link rel="stylesheet" type="text/css" href="/public/css/reset.css" />
+    <link rel="stylesheet" type="text/css" href="/public/css/ui.css" />
+
+    <style>
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            /* User section should be at the bottom of the sidebar */
+            justify-content: space-between;
+        }
+        .sidebar .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar .logo-container>.logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 10%;
+        }
+        .sidebar>.user-section {
+            
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <!-- Navbar -->
+     <!-- Sidebar -->
+    <!-- {-{ component Sidebar/FolderTree }} -->
+    <aside class="sidebar" id="sidebar">
+        <div>
+            <div class="logo-container">
+                <img src="/public/images/logo.png" alt="Breviago" class="logo" />
+                <h1>{{ getAppName }}</h1>
+            </div>
+            
+            <div class="links">
+                <h2>Links</h2>
+                <ul>
+                    <li><a href="/acronyms">Acronyms</a></li>
+                </ul>
+            </div>
+            <div class="folder-tree">
+                <h2>Folders</h2>
+                <button class="btn btn-primary" hx-get="/folders/new" hx-target="#folder-list">+ New Folder</button>
+                <ul id="folder-list" class="collapsible-tree">
+                    <!-- HTMX load folder tree -->
+                    <li class="folder">
+                        <div class="folder-header">
+                            <span class="folder-toggle">▼</span>
+                            <span class="folder-name">Folder 1</span>
+                        </div>
+                        <ul class="folder-items">
+                            <li class="folder-item">Item 1.1</li>
+                            <li class="folder-item">Item 1.2</li>
+                        </ul>
+                    </li>
+                    <li class="folder">
+                        <div class="folder-header">
+                            <span class="folder-toggle">▼</span>
+                            <span class="folder-name">Folder 2</span>
+                        </div>
+                        <ul class="folder-items">
+                            <li class="folder-item">Item 2.1</li>
+                            <li class="folder-item">Item 2.2</li>
+                        </ul>
+                    </li>
+                    <li class="folder">
+                        <div class="folder-header">
+                            <span class="folder-toggle">▼</span>
+                            <span class="folder-name">Folder 3</span>
+                        </div>
+                        <ul class="folder-items">
+                            <li class="folder-item">Item 3.1</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <img src="http://placebeard.it/250/250" alt="User" />
+                </div>
+                <div class="user-details">
+                    <span class="user-name">John Doe</span>
+                    <!-- TODO: Use role should only be visible to admins -->
+                    <span class="user-role">Administrator</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="/settings" class="user-action-btn">
+                    <i class="ph ph-gear-six"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="/logout" class="user-action-btn logout-btn">
+                    <i class="ph ph-sign-out"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+    <!-- {-{ END FolderTree }} -->
+
+    <div class="container">
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Acronym List View -->
+            <!-- {-{ component Acronym/ListView }} -->
+            <div class="acronym-list" id="acronym-list">
+                <div class="flex">
+                    <button class="btn btn-primary" hx-get="/acronyms/new" hx-target="#modal-content" hx-trigger="click" onclick="openModal()">+ Add Acronym</button>
+                    <button class="btn" hx-post="/acronyms/bulk-delete" hx-vals="{}" hx-confirm="Delete selected?">Delete Selected</button>
+                    <!-- Advanced search filter with JQL-like syntax -->
+                    <div class="search-container">
+                        <input 
+                          type="text" 
+                          class="search-input" 
+                          id="searchFilter" 
+                          name="searchFilter"
+                          hx-trigger="keyup changed delay:1000ms"
+                          hx-get="/api/v1/acronyms/search"
+                          hx-include="#searchFilter"
+                          hx-target="#acronym-list tbody"
+                          placeholder='Try &quot;acronym = API&quot; or &quot;meaning contains interface&quot;'
+                          title="Supported operators: =, !=, contains, startsWith, endsWith  
+                      Fields: acronym, meaning, category, modified"
+                        />
+                      </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" hx-model="selectedAcronyms" /></th>
+                            <th hx-get="/acronyms?sort=acronym" hx-trigger="click">Acronym</th>
+                            <th hx-get="/acronyms?sort=meaning" hx-trigger="click">Meaning</th>
+                            <th hx-get="/acronyms?sort=modified" hx-trigger="click">Modified</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- HTMX list items loaded via HTMX but first loaded during rendering -->
+                        <tr class="acronym-row" hx-get="/acronyms/{uuid}" hx-target="#acronym-details" hx-trigger="click">
+                            <td><input type="checkbox" /></td>
+                            <td>Acronym 1</td>
+                            <td>Meaning 1</td>
+                            <td>Modified 1</td>
+                            <td>Actions 1</td>
+                        </tr>
+                        <tr class="acronym-row" hx-get="/acronyms/{uuid}" hx-target="#acronym-details" hx-trigger="click">
+                            <td><input type="checkbox" /></td>
+                            <td>Acronym 2</td>
+                            <td>Meaning 2</td>
+                            <td>Modified 2</td>
+                            <td>Actions 2</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- {-{ END ListView }} -->
+
+            <!-- Acronym Details Sidebar -->
+            <div id="acronym-details" class="acronym-details-sidebar">
+                <!-- Content will be loaded via HTMX -->
+                <div class="acronym-details-header">
+                    <h2>Acronym Details</h2>
+                    <button class="close-sidebar" onclick="closeAcronymDetails()">&times;</button>
+                </div>
+                <div class="acronym-details-content">
+                    <!-- Content will be loaded via HTMX -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Acronym</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modal-content">
+                <form hx-post="/acronyms" hx-target="#acronym-list tbody" class="acronym-form">
+                    <div class="form-group">
+                        <label for="acronym">Acronym:</label>
+                        <input type="text" id="acronym" name="acronym" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="meaning">Meaning:</label>
+                        <input type="text" id="meaning" name="meaning" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <textarea id="description" name="description" rows="4"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: var(--bg-color);
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close {
+            color: var(--text-color);
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .acronym-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .acronym-row {
+            cursor: pointer;
+        }
+
+        .acronym-row:hover {
+            background-color: var(--nav-bg);
+        }
+
+        .acronym-details-sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--border-color);
+            padding: 1.5rem;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .acronym-details-sidebar.active {
+            transform: translateX(0);
+        }
+
+        .acronym-details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .acronym-details-header h2 {
+            margin: 0;
+        }
+
+        .acronym-details-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .acronym-details-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .acronym-details-section h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .acronym-details-section p {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .acronym-details-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .close-sidebar {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .close-sidebar:hover {
+            opacity: 1;
+        }
+    </style>
+
+    <script>
+        function openModal() {
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Function to handle acronym row clicks
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'acronym-details') {
+                document.getElementById('acronym-details').classList.add('active');
+            }
+        });
+
+        // Function to close the sidebar
+        function closeAcronymDetails() {
+            document.getElementById('acronym-details').classList.remove('active');
+        }
+    </script>
+
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            body.dataset.theme = body.dataset.theme === 'dark' ? 'dark' : 'light';
+        }
+    </script>
+
+<link
+rel="stylesheet"
+type="text/css"
+href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css"
+/>
+<link
+rel="stylesheet"
+type="text/css"
+href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css"
+/>
+
+</body>
+</html>
+{{ end }}

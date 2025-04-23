@@ -102,8 +102,9 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) {
 		//c.HTML(http.StatusOK, "index_unauthenticated", gin.H{})
-		c.HTML(http.StatusOK, "views/test", gin.H{})
+		c.HTML(http.StatusOK, "views/acronyms", gin.H{})
 	})
+
 	r.GET("/login", func(c *gin.Context) {
 		fmt.Println("Rendering login page")
 		c.HTML(http.StatusOK, "login", gin.H{
