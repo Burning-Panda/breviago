@@ -26,13 +26,24 @@ type Session struct {
 type User struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UUID      string    `gorm:"type:text;unique;index" json:"uuid"`
-	Username  string    `gorm:"unique" json:"username"`
+	Name      string    `gorm:"unique" json:"name"`
+	LegalName string    `gorm:"unique" json:"legal_name"`
 	Email     string    `gorm:"unique" json:"email"`
 	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Session   Session   `gorm:"foreignKey:UserID"`
+	Settings  []UserSettings `gorm:"foreignKey:UserID"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+type UserSettings struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `json:"user_id"`
+	Setting   string    `json:"setting"`
+	Value     string    `json:"value"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type AuditLog struct {

@@ -97,8 +97,8 @@ func main() {
 	})
 
 	// parse base and partials
-	tmpl = template.Must(tmpl.ParseGlob("templates/layouts/*.html"))
-	tmpl = template.Must(tmpl.ParseGlob("templates/components/*.html"))
+	//tmpl = template.Must(tmpl.ParseGlob("templates/layouts/*.html"))
+	//tmpl = template.Must(tmpl.ParseGlob("templates/components/*.html"))
 	// parse all views (they only define blocks)
 	tmpl = template.Must(tmpl.ParseGlob("templates/views/*.html"))
 
@@ -135,16 +135,12 @@ func main() {
 	
 
 	r.GET("/acronyms", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "acronyms.html", gin.H{
+		c.HTML(http.StatusOK, "testing", gin.H{
 			"Acronyms": []db.Acronym{
 				{Acronym: "API", Meaning: "Application Programming Interface"},
 				{Acronym: "HTTP", Meaning: "Hypertext Transfer Protocol"},
 			},
 		})
-	})
-
-	r.GET("/test", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "testing", gin.H{})
 	})
 
 	r.GET("/acronyms/:id", getAcronym)
@@ -175,18 +171,6 @@ func main() {
 	authGroup.POST("/logout", auth.LogoutHandler(database))
 	authGroup.GET("/user", auth.UserHandler(database))
 	authGroup.POST("/refresh", auth.RefreshHandler(database))
-
-	// Routes for API
-	/*
-GET    /api/acronyms              → list all
-POST   /api/acronyms              → create new
-GET    /api/acronyms/{id}         → detail fragment
-PUT    /api/acronyms/{id}         → update
-DELETE /api/acronyms/{id}         → delete
-GET    /api/acronyms/{id}/share   → share‑modal fragment
-GET    /api/acronyms?tag={tag}    → list filtered by tag 
-
-	*/
 
 	r.Run(":8060")
 }
@@ -284,6 +268,12 @@ func apiGetAcronym(c *gin.Context) {
 	var acronym db.Acronym
 	if err := db.GetGormDB().
 		Preload("Related").
+		Preload("Labels").
+		Preload("Comments").
+		Preload("History").
+		Preload("Grants").
+		Preload("Owner", "owner_type = ?", "user").
+		Preload("Owner", "owner_type = ?", "organization").
 		Where("uuid = ?", uuid.String()).
 		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
@@ -321,11 +311,17 @@ func getAcronym(c *gin.Context) {
 	var acronym db.Acronym
 	if err := db.GetGormDB().
 		Preload("Related").
+		Preload("Labels").
+		Preload("Comments").
+		Preload("History").
+		Preload("Grants").
+		Preload("Owner", "owner_type = ?", "user").
+		Preload("Owner", "owner_type = ?", "organization").
 		Where("uuid = ?", uuid.String()).
 		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "components/acronym_modal", gin.H{"Acronym": acronym})
+	c.HTML(http.StatusOK, "components/AcronymContent", gin.H{"Acronym": acronym})
 }

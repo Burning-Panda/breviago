@@ -19,8 +19,8 @@
                         <i class="ph ph-list"></i>
                     </button>
                     <div class="navbar-brand">
-                        <span class="navbar-logo">A</span>
-                        <h1 class="navbar-title">AcronymHub</h1>
+                        <img src="/public/images/logo.png" alt="Breviage" class="navbar-logo">
+                        <h1 class="navbar-title">Breviage</h1>
                     </div>
                 </div>
                 <div class="navbar-search">
@@ -32,8 +32,8 @@
                         <i class="ph ph-plus"></i>
                         <span>New</span>
                     </button>
-                    <button class="btn btn-icon">
-                        <i class="ph ph-sun"></i>
+                    <button class="btn btn-icon" onclick="swapTheme()">
+                        <i id="color-mode-toggle" class="ph ph-sun"></i>
                     </button>
                     <button class="btn btn-icon">
                         <i class="ph ph-gear"></i>
@@ -79,37 +79,7 @@
                             <button class="acronym-tag">web</button>
                         </div>
                     </div>
-                    <div class="sidebar-section">
-                        <div class="sidebar-title">
-                            <h3>Folders</h3>
-                            <button class="btn btn-icon">
-                                <i class="ph ph-folder-plus"></i>
-                            </button>
-                        </div>
-                        <div class="folder-list">
-                            <div class="sidebar-item">
-                                <button class="btn">
-                                    <i class="ph ph-caret-down"></i>
-                                </button>
-                                <i class="ph ph-folder sidebar-item-icon"></i>
-                                <span>Technology</span>
-                            </div>
-                            <div class="folder-subitem">
-                                <div class="sidebar-item">
-                                    <i class="ph ph-folder sidebar-item-icon"></i>
-                                    <span>Programming</span>
-                                </div>
-                            </div>
-                            <div class="sidebar-item">
-                                <i class="ph ph-folder sidebar-item-icon"></i>
-                                <span>Business</span>
-                            </div>
-                            <div class="sidebar-item">
-                                <i class="ph ph-folder sidebar-item-icon"></i>
-                                <span>Healthcare</span>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </aside>
 
@@ -134,7 +104,8 @@
                     </div>
                     <div class="acronym-items">
                         {{ range $i := 10 }}
-                        <div class="acronym-item">
+                        <div class="acronym-item" hx-get="/acronyms/{{ $i }}" hx-target="#acronym-details"
+                            hx-swap="innerHTML">
                             <div class="acronym-item-content">
                                 <div class="acronym-item-checkbox">
                                     <input type="checkbox">
@@ -164,85 +135,29 @@
                 </div>
 
                 <div id="acronym-details" class="acronym-details">
-                    <div class="acronym-details-header">
-                        <h2 class="acronym-details-title">Acronym Details</h2>
-                        <div class="acronym-details-actions">
-                            <button class="btn btn-icon">
-                                <i class="ph ph-share"></i>
-                            </button>
-                            <button class="btn btn-icon">
-                                <i class="ph ph-pen"></i>
-                            </button>
-                            <button class="btn btn-icon btn-danger">
-                                <i class="ph ph-trash"></i>
-                            </button>
-                            <button class="btn btn-icon">
-                                <i class="ph ph-x"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="acronym-details-content">
-                        <div class="acronym-details-main">
-                            <div class="acronym-details-header-content">
-                                <h1 class="acronym-details-name">API</h1>
-                            </div>
-                            <h2 class="acronym-details-full-name">Application Programming Interface</h2>
-                            <div class="acronym-details-description">
-                                <h3 class="acronym-details-description-title">Description</h3>
-                                <p class="acronym-details-description-text">A set of definitions and protocols for
-                                    building and integrating application software.</p>
-                            </div>
-                            <div class="acronym-details-tags">
-                                <h3 class="acronym-details-tags-title">Tags</h3>
-                                <div class="acronym-details-tags-list">
-                                    <span class="acronym-details-tag">programming</span>
-                                    <span class="acronym-details-tag">web</span>
-                                    <span class="acronym-details-tag">backend</span>
-                                </div>
-                            </div>
-                            <div class="acronym-details-meta">
-                                <div class="acronym-details-meta-grid">
-                                    <div class="acronym-details-meta-item">
-                                        <i class="ph ph-calendar acronym-details-meta-icon"></i>
-                                        <div>
-                                            <p>Created: Jan 13, 2023, 01:00 AM</p>
-                                            <p>Updated: Jan 17, 2023, 01:00 AM</p>
-                                        </div>
-                                    </div>
-                                    <div class="acronym-details-meta-item">
-                                        <i class="ph ph-user acronym-details-meta-icon"></i>
-                                        <p>Created by: John Doe</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="acronym-details-related">
-                            <h3 class="acronym-details-related-title">Related Acronyms</h3>
-                            <div class="acronym-details-related-grid">
-                                <div class="acronym-details-related-item">
-                                    <h4 class="acronym-details-related-name">PROGRAMMING</h4>
-                                    <p class="acronym-details-related-description">Related to programming</p>
-                                </div>
-                                <div class="acronym-details-related-item">
-                                    <h4 class="acronym-details-related-name">WEB</h4>
-                                    <p class="acronym-details-related-description">Related to web</p>
-                                </div>
-                                <div class="acronym-details-related-item">
-                                    <h4 class="acronym-details-related-name">BACKEND</h4>
-                                    <p class="acronym-details-related-description">Related to backend</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {{ template "components/AcronymContent" . }}
                 </div>
             </main>
         </div>
     </div>
 
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
     <link rel="stylesheet" type="text/css"
         href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
     <link rel="stylesheet" type="text/css"
         href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+
+    <script>
+        function swapTheme() {
+            const body = document.body;
+            body.dataset.theme = body.dataset.theme === 'dark' ? 'light' : 'dark';
+
+            const colorModeToggle = document.getElementById('color-mode-toggle');
+            colorModeToggle.classList.toggle('ph-sun', body.dataset.theme === 'dark');
+            colorModeToggle.classList.toggle('ph-moon', body.dataset.theme === 'light');
+        }
+    </script>
 
 </body>
 
@@ -250,75 +165,123 @@
 {{ end }}
 
 {{ define "components/AcronymContent"}}
-<div class="acronym-details">
-    <div class="acronym-details-header">
-        <h2 class="acronym-details-title">Acronym Details</h2>
-        <div class="acronym-details-actions">
-            <button class="btn btn-icon">
-                <i class="ph ph-share"></i>
-            </button>
-            <button class="btn btn-icon">
-                <i class="ph ph-pen"></i>
-            </button>
-            <button class="btn btn-icon btn-danger">
-                <i class="ph ph-trash"></i>
-            </button>
-            <button class="btn btn-icon">
-                <i class="ph ph-x"></i>
-            </button>
+<div class="acronym-details-header">
+    <h2 class="acronym-details-title">Acronym Details</h2>
+    <div class="acronym-details-actions">
+        <button class="btn btn-icon">
+            <i class="ph ph-share"></i>
+        </button>
+        <button class="btn btn-icon">
+            <i class="ph ph-pen"></i>
+        </button>
+        <button class="btn btn-icon btn-danger">
+            <i class="ph ph-trash"></i>
+        </button>
+        <button class="btn btn-icon">
+            <i class="ph ph-x"></i>
+        </button>
+    </div>
+</div>
+<div class="acronym-details-content">
+    {{ if .Acronym }}
+    <div class="acronym-details-main">
+        <div class="acronym-details-header-content">
+            <h1 class="acronym-details-name">{{ .Acronym.Acronym }}</h1>
+        </div>
+        <h2 class="acronym-details-full-name">{{ .Acronym.Meaning }}</h2>
+        <div class="acronym-details-description">
+            <h3 class="acronym-details-description-title">Description</h3>
+            <p class="acronym-details-description-text">{{ .Acronym.Description }}</p>
+        </div>
+        <div class="acronym-details-tags">
+            <h3 class="acronym-details-tags-title">Tags</h3>
+            <div class="acronym-details-tags-list">
+                {{ range .Acronym.Labels }}
+                <span class="acronym-details-tag">{{ .Label }}</span>
+                {{ end }}
+            </div>
+        </div>
+        <div class="acronym-details-meta">
+            <div class="acronym-details-meta-grid">
+                <div class="acronym-details-meta-item">
+                    <i class="ph ph-calendar acronym-details-meta-icon"></i>
+                    <div>
+                        <p>Created: {{ .Acronym.CreatedAt }}</p>
+                        <p>Updated: {{ .Acronym.UpdatedAt }}</p>
+                    </div>
+                </div>
+                <div class="acronym-details-meta-item">
+                    <i class="ph ph-user acronym-details-meta-icon"></i>
+                    <p>Created by: {{ .Acronym.Owner.Name }}</p>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="acronym-details-content">
-        <div class="acronym-details-main">
-            <div class="acronym-details-header-content">
-                <h1 class="acronym-details-name">API</h1>
+    <div class="acronym-details-related">
+        <h3 class="acronym-details-related-title">Related Acronyms</h3>
+        <div class="acronym-details-related-grid">
+            <div class="acronym-details-related-item">
+                <h4 class="acronym-details-related-name">PROGRAMMING</h4>
+                <p class="acronym-details-related-description">Related to programming</p>
             </div>
-            <h2 class="acronym-details-full-name">Application Programming Interface</h2>
-            <div class="acronym-details-description">
-                <h3 class="acronym-details-description-title">Description</h3>
-                <p class="acronym-details-description-text">A set of definitions and protocols for
-                    building and integrating application software.</p>
+            <div class="acronym-details-related-item">
+                <h4 class="acronym-details-related-name">WEB</h4>
+                <p class="acronym-details-related-description">Related to web</p>
             </div>
-            <div class="acronym-details-tags">
-                <h3 class="acronym-details-tags-title">Tags</h3>
-                <div class="acronym-details-tags-list">
-                    <span class="acronym-details-tag">programming</span>
-                    <span class="acronym-details-tag">web</span>
-                    <span class="acronym-details-tag">backend</span>
-                </div>
-            </div>
-            <div class="acronym-details-meta">
-                <div class="acronym-details-meta-grid">
-                    <div class="acronym-details-meta-item">
-                        <i class="ph ph-calendar acronym-details-meta-icon"></i>
-                        <div>
-                            <p>Created: Jan 13, 2023, 01:00 AM</p>
-                            <p>Updated: Jan 17, 2023, 01:00 AM</p>
-                        </div>
-                    </div>
-                    <div class="acronym-details-meta-item">
-                        <i class="ph ph-user acronym-details-meta-icon"></i>
-                        <p>Created by: John Doe</p>
-                    </div>
-                </div>
+            <div class="acronym-details-related-item">
+                <h4 class="acronym-details-related-name">BACKEND</h4>
+                <p class="acronym-details-related-description">Related to backend</p>
             </div>
         </div>
-        <div class="acronym-details-related">
-            <h3 class="acronym-details-related-title">Related Acronyms</h3>
-            <div class="acronym-details-related-grid">
-                <div class="acronym-details-related-item">
-                    <h4 class="acronym-details-related-name">PROGRAMMING</h4>
-                    <p class="acronym-details-related-description">Related to programming</p>
-                </div>
-                <div class="acronym-details-related-item">
-                    <h4 class="acronym-details-related-name">WEB</h4>
-                    <p class="acronym-details-related-description">Related to web</p>
-                </div>
-                <div class="acronym-details-related-item">
-                    <h4 class="acronym-details-related-name">BACKEND</h4>
-                    <p class="acronym-details-related-description">Related to backend</p>
-                </div>
+    </div>
+    {{ else }}
+    {{ template "components/AcronymListNoContent" . }}
+    {{ end }}
+</div>
+{{ end }}
+
+{{ define "components/AcronymListNoContent"}}
+<div class="acronym-no-content">
+    <div class="acronym-no-content-box">
+        <h3 class="acronym-no-content-title">No acronym selected</h3>
+        <p class="acronym-no-content-description">Select an acronym from the list to view its details or create a
+            new one to get started.</p><button class="acronym-no-content-button">
+            <i class="ph ph-plus"></i>
+            Create new acronym</button>
+    </div>
+</div>
+{{ end }}
+
+{{ define "components/AcronymFolder"}}
+<div class="sidebar-section">
+    <div class="sidebar-title">
+        <h3>Folders</h3>
+        <button class="btn btn-icon">
+            <i class="ph ph-folder-plus"></i>
+            <span>New Folder</span>
+        </button>
+    </div>
+    <div class="folder-list">
+        <div class="sidebar-item">
+            <button class="btn">
+                <i class="ph ph-caret-down"></i>
+            </button>
+            <i class="ph ph-folder sidebar-item-icon"></i>
+            <span>Technology</span>
+        </div>
+        <div class="folder-subitem">
+            <div class="sidebar-item">
+                <i class="ph ph-folder sidebar-item-icon"></i>
+                <span>Programming</span>
             </div>
+        </div>
+        <div class="sidebar-item">
+            <i class="ph ph-folder sidebar-item-icon"></i>
+            <span>Business</span>
+        </div>
+        <div class="sidebar-item">
+            <i class="ph ph-folder sidebar-item-icon"></i>
+            <span>Healthcare</span>
         </div>
     </div>
 </div>
