@@ -39,10 +39,25 @@
                         <i class="ph ph-gear"></i>
                     </button>
                     <div class="user-profile">
-                        <button class="btn">
-                            <img src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=2"
+                        <button class="btn user-profile-button" type="button" onclick="toggleUserProfileDropdown()">
+                            <img src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?cs=srgb&fm=jpg&w=250"
                                 alt="John Doe" class="profile-image">
                         </button>
+
+                        <div id="user-profile-dropdown" class="user-profile-dropdown" data-visible="false">
+                            <button class="btn">
+                                <i class="ph ph-user"></i>
+                                <span>Profile</span>
+                            </button>
+                            <button class="btn">
+                                <i class="ph ph-gear"></i>
+                                <span>Settings</span>
+                            </button>
+                            <button class="btn">
+                                <i class="ph ph-sign-out"></i>
+                                <span>Logout</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -156,6 +171,11 @@
             const colorModeToggle = document.getElementById('color-mode-toggle');
             colorModeToggle.classList.toggle('ph-sun', body.dataset.theme === 'dark');
             colorModeToggle.classList.toggle('ph-moon', body.dataset.theme === 'light');
+        }
+
+        function toggleUserProfileDropdown() {
+            const userProfileDropdown = document.getElementById('user-profile-dropdown');
+            userProfileDropdown.dataset.visible = userProfileDropdown.dataset.visible === 'true' ? 'false' : 'true';
         }
     </script>
 

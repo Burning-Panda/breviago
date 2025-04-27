@@ -139,6 +139,36 @@ button:hover {
 	gap: 0.5rem;
 }
 
+.user-profile {
+	position: relative;
+}
+
+.user-profile-button {
+	background-color: transparent;
+	border: none;
+	cursor: pointer;
+}
+
+.user-profile img {
+	max-width: 2rem;
+	max-height: 2rem;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.user-profile-dropdown {
+	position: absolute;
+	top: 4rem;
+	right: 0;
+	background-color: var(--bg-color);
+	box-shadow: var(--shadow-sm);
+	display: none;
+}
+
+.user-profile-dropdown[data-visible="true"] {
+	display: block;
+}
+
 /* Sidebar */
 .sidebar {
 	position: fixed;
