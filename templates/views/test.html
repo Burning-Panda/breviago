@@ -163,7 +163,7 @@
                     </div>
                 </div>
 
-                <div class="acronym-details">
+                <div id="acronym-details" class="acronym-details">
                     <div class="acronym-details-header">
                         <h2 class="acronym-details-title">Acronym Details</h2>
                         <div class="acronym-details-actions">
@@ -247,4 +247,79 @@
 </body>
 
 </html>
+{{ end }}
+
+{{ define "components/AcronymContent"}}
+<div class="acronym-details">
+    <div class="acronym-details-header">
+        <h2 class="acronym-details-title">Acronym Details</h2>
+        <div class="acronym-details-actions">
+            <button class="btn btn-icon">
+                <i class="ph ph-share"></i>
+            </button>
+            <button class="btn btn-icon">
+                <i class="ph ph-pen"></i>
+            </button>
+            <button class="btn btn-icon btn-danger">
+                <i class="ph ph-trash"></i>
+            </button>
+            <button class="btn btn-icon">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+    </div>
+    <div class="acronym-details-content">
+        <div class="acronym-details-main">
+            <div class="acronym-details-header-content">
+                <h1 class="acronym-details-name">API</h1>
+            </div>
+            <h2 class="acronym-details-full-name">Application Programming Interface</h2>
+            <div class="acronym-details-description">
+                <h3 class="acronym-details-description-title">Description</h3>
+                <p class="acronym-details-description-text">A set of definitions and protocols for
+                    building and integrating application software.</p>
+            </div>
+            <div class="acronym-details-tags">
+                <h3 class="acronym-details-tags-title">Tags</h3>
+                <div class="acronym-details-tags-list">
+                    <span class="acronym-details-tag">programming</span>
+                    <span class="acronym-details-tag">web</span>
+                    <span class="acronym-details-tag">backend</span>
+                </div>
+            </div>
+            <div class="acronym-details-meta">
+                <div class="acronym-details-meta-grid">
+                    <div class="acronym-details-meta-item">
+                        <i class="ph ph-calendar acronym-details-meta-icon"></i>
+                        <div>
+                            <p>Created: Jan 13, 2023, 01:00 AM</p>
+                            <p>Updated: Jan 17, 2023, 01:00 AM</p>
+                        </div>
+                    </div>
+                    <div class="acronym-details-meta-item">
+                        <i class="ph ph-user acronym-details-meta-icon"></i>
+                        <p>Created by: John Doe</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="acronym-details-related">
+            <h3 class="acronym-details-related-title">Related Acronyms</h3>
+            <div class="acronym-details-related-grid">
+                <div class="acronym-details-related-item">
+                    <h4 class="acronym-details-related-name">PROGRAMMING</h4>
+                    <p class="acronym-details-related-description">Related to programming</p>
+                </div>
+                <div class="acronym-details-related-item">
+                    <h4 class="acronym-details-related-name">WEB</h4>
+                    <p class="acronym-details-related-description">Related to web</p>
+                </div>
+                <div class="acronym-details-related-item">
+                    <h4 class="acronym-details-related-name">BACKEND</h4>
+                    <p class="acronym-details-related-description">Related to backend</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {{ end }}
