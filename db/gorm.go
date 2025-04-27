@@ -69,7 +69,7 @@ type OrganizationMember struct {
 
 type Folder struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:text" json:"uuid"`
+	UUID        string    `gorm:"type:text;unique;index" json:"uuid"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	OwnerID     uint      `json:"owner_id"`
@@ -119,14 +119,14 @@ type DocumentGrant struct {
 
 type Acronym struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:uuid" json:"uuid"`
+	UUID        string    `gorm:"type:uuid;unique;index" json:"uuid"`
 	Acronym     string    `json:"acronym"`
 	Meaning     string    `json:"meaning"`
 	Description string    `json:"description"`
 	OwnerID     uint      `json:"owner_id"`
 	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
 
-	Synonyms    []Acronym `gorm:"many2many:acronym_synonyms;"`
+	Related     []Acronym `gorm:"many2many:acronym_relations;"`
 	Labels      []AcronymLabel   `gorm:"foreignKey:AcronymID"`
 	Comments    []AcronymComment `gorm:"foreignKey:AcronymID"`
 	History     []AcronymHistory `gorm:"foreignKey:AcronymID"`

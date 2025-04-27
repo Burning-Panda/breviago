@@ -5,10 +5,10 @@
     <p>Meaning: {{ .Acronym.Meaning }}</p>
     <p>Created At: {{ .Acronym.CreatedAt.Format "2006-01-02 15:04:05" }}</p>
     <p>Updated At: {{ .Acronym.UpdatedAt.Format "2006-01-02 15:04:05" }}</p>
-    <p>Synonyms: {{ range .Acronym.Synonyms }} {{ .Synonym }} {{ end }}</p>
+    <p>Related: {{ range .Acronym.Related }} {{ .Acronym }} {{ end }}</p>
     <p>Labels: {{ range .Acronym.Labels }} {{ .Label }} {{ end }}</p>
     <p>Comments: {{ range .Acronym.Comments }} {{ .Comment }} {{ end }}</p>
-    <p>History: {{ range .Acronym.History }} {{ .History }} {{ end }}</p>
-    <p>Grants: {{ range .Acronym.Grants }} {{ .Grant }} {{ end }}</p>
+    <p>History: {{ range .Acronym.History }} {{ .Action }} {{ end }}</p>
+    <p>Grants: {{ range .Acronym.Grants }} {{ .GranteeType }} {{ end }}</p>
 </div>
 {{ end }}

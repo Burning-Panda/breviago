@@ -58,8 +58,8 @@ func main() {
 	r.Static("/public", "./public")
 
 	// Add authentication middleware after static files
-	r.Use(auth.IsAuthenticated(unprotectedRoutes))
-	r.Use(auth.AuthorizationMiddleware(auth.InitFgaClient()))
+	// r.Use(auth.IsAuthenticated(unprotectedRoutes))
+	// r.Use(auth.AuthorizationMiddleware(auth.InitFgaClient()))
 
 	/* ########################################## */
 	/* ################# Website ################# */
@@ -141,6 +141,10 @@ func main() {
 				{Acronym: "HTTP", Meaning: "Hypertext Transfer Protocol"},
 			},
 		})
+	})
+
+	r.GET("/test", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "testing", gin.H{})
 	})
 
 	r.GET("/acronyms/:id", getAcronym)
@@ -278,7 +282,10 @@ func apiGetAcronym(c *gin.Context) {
 	}
 
 	var acronym db.Acronym
-	if err := db.GetGormDB().Joins("AcronymSynonyms").Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
+	if err := db.GetGormDB().
+		Preload("Related").
+		Where("uuid = ?", uuid.String()).
+		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
 		return
 	}
@@ -312,7 +319,10 @@ func getAcronym(c *gin.Context) {
 	}
 	
 	var acronym db.Acronym
-	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
+	if err := db.GetGormDB().
+		Preload("Related").
+		Where("uuid = ?", uuid.String()).
+		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
 		return
 	}

@@ -98,12 +98,12 @@ func InitDB(db *gorm.DB) {
 				Description: "The main application for managing and remembering abbreviations",
 				OwnerID:     adminUser.ID,
 				OwnerType:   "user",
-				Synonyms: []Acronym{
+				Related: []Acronym{
 					{
 						UUID:        "00000000-0000-0000-0000-000000000001",
 						Acronym:     "SB",
-						Meaning:     "Synonym Breviago",
-						Description: "Is a synonym of breviago is a application for remembering abbreviations",
+						Meaning:     "Relation Breviago",
+						Description: "Is a relation of breviago is a application for remembering abbreviations",
 						OwnerID:     adminUser.ID,
 						OwnerType:   "user",
 					},
