@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -124,6 +125,13 @@ type Acronym struct {
 	Description string    `json:"description"`
 	OwnerID     uint      `json:"owner_id"`
 	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
+
+	Synonyms    []Acronym `gorm:"many2many:acronym_synonyms;"`
+	Labels      []AcronymLabel   `gorm:"foreignKey:AcronymID"`
+	Comments    []AcronymComment `gorm:"foreignKey:AcronymID"`
+	History     []AcronymHistory `gorm:"foreignKey:AcronymID"`
+	Grants      []AcronymGrant   `gorm:"foreignKey:AcronymID"`
+
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
@@ -158,6 +166,48 @@ type AcronymCategory struct {
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
+type AcronymLabel struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UUID      string    `gorm:"type:text" json:"uuid"`
+	AcronymID uint      `json:"acronym_id"`
+	LabelID   uint      `json:"label_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+type AcronymHistory struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UUID      string    `gorm:"type:text" json:"uuid"`
+	AcronymID uint      `json:"acronym_id"`
+	Action    string    `json:"action"`
+	Data      string    `json:"data"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+type AcronymComment struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UUID      string    `gorm:"type:text" json:"uuid"`
+	AcronymID uint      `json:"acronym_id"`
+	Comment   string    `json:"comment"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+type AcronymGrant struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UUID      string    `gorm:"type:text" json:"uuid"`
+	AcronymID uint      `json:"acronym_id"`
+	GranteeID uint      `json:"grantee_id"`
+	GranteeType string    `json:"grantee_type"` // "user", "organization", or "group"
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
 // UUIDable interface for models that need UUID generation
 type UUIDable interface {
 	SetUUID(uuid string)
@@ -165,7 +215,13 @@ type UUIDable interface {
 
 // GenerateUUID generates a UUID for any model that implements UUIDable
 func GenerateUUID(tx *gorm.DB, model UUIDable) error {
+	
 	model.SetUUID(uuid.New().String())
+
+	if tx.Error != nil {
+		return tx.Error
+	}
+
 	return nil
 }
 
@@ -179,6 +235,12 @@ func (d *Document) SetUUID(uuid string) { d.UUID = uuid }
 func (dg *DocumentGrant) SetUUID(uuid string) { dg.UUID = uuid }
 func (a *Acronym) SetUUID(uuid string) { a.UUID = uuid }
 func (c *Category) SetUUID(uuid string) { c.UUID = uuid }
+func (l *Label) SetUUID(uuid string) { l.UUID = uuid }
+func (ac *AcronymCategory) SetUUID(uuid string) { ac.UUID = uuid }
+func (al *AcronymLabel) SetUUID(uuid string) { al.UUID = uuid }
+func (ah *AcronymHistory) SetUUID(uuid string) { ah.UUID = uuid }
+func (ac *AcronymComment) SetUUID(uuid string) { ac.UUID = uuid }
+func (ag *AcronymGrant) SetUUID(uuid string) { ag.UUID = uuid }
 
 // BeforeCreate hooks using the generic GenerateUUID function
 func (u *User) BeforeCreate(tx *gorm.DB) error {
@@ -217,6 +279,42 @@ func (c *Category) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, c)
 }
 
+func (l *Label) BeforeCreate(tx *gorm.DB) error {
+	return GenerateUUID(tx, l)
+}
+
+func (ac *AcronymCategory) BeforeCreate(tx *gorm.DB) error {
+	return GenerateUUID(tx, ac)
+}
+
+func (al *AcronymLabel) BeforeCreate(tx *gorm.DB) error {
+	return GenerateUUID(tx, al)
+}
+
+func (ah *AcronymHistory) BeforeCreate(tx *gorm.DB) error {
+	return GenerateUUID(tx, ah)
+}
+
+func (ac *AcronymComment) BeforeCreate(tx *gorm.DB) error {
+	return GenerateUUID(tx, ac)
+}
+
+func (ag *AcronymGrant) BeforeCreate(tx *gorm.DB) error {
+	return GenerateUUID(tx, ag)
+}
+
+func (a *Acronym) AfterSave(tx *gorm.DB) error {
+	// Create a new history record when an acronym is saved
+	history := AcronymHistory{
+		AcronymID: a.ID,
+		Action:    "save",
+		Data:      fmt.Sprintf("%+v", a),
+	}
+	
+	return tx.Create(&history).Error
+}
+
+
 func GetGormDB() *gorm.DB {
 	if gormDB == nil {
 		var err error
@@ -240,6 +338,10 @@ func GetGormDB() *gorm.DB {
 			&Category{},
 			&Label{},
 			&AcronymCategory{},
+			&AcronymLabel{},
+			&AcronymHistory{},
+			&AcronymComment{},
+			&AcronymGrant{},
 		)
 		if err != nil {
 			log.Fatal("Failed to migrate database:", err)

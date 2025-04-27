@@ -165,6 +165,28 @@
                             <td>Modified 2</td>
                             <td>Actions 2</td>
                         </tr>
+                        {{ range getAllAcronyms }}
+                            <tr class="acronym-row"
+                                hx-get="/acronyms/{{ .UUID }}"
+                                hx-target="#modal-content"
+                                hx-trigger="click"
+                                hx-swap="innerHTML"
+                                onclick="openModal()"
+                            >
+                                <td><input type="checkbox" /></td>
+                                <td>{{ .Acronym }}</td>
+                                <td>{{ .Meaning }}</td>
+                                <td>{{ .UpdatedAt.Format "2006-01-02 15:04:05" }}</td>
+                                <td>
+                                    <a href="/acronyms/{{ .UUID }}/edit" title="Edit">
+                                        <i class="ph-pencil-simple"></i> <span class="action-label">Edit</span>
+                                    </a>
+                                    <a href="/acronyms/{{ .UUID }}/delete" title="Delete">
+                                        <i class="ph-trash"></i> <span class="action-label">Delete</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        {{ end }}
                     </tbody>
                 </table>
             </div>
@@ -185,7 +207,7 @@
     </div>
 
     <!-- Modal -->
-    <div id="modal" class="modal" style="display: none;">
+    <div id="modal" class="modal" data-open="false">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Add New Acronym</h2>
@@ -213,6 +235,7 @@
             </div>
         </div>
     </div>
+    <!-- {-{ END Modal }} -->
 
     <style>
         .modal {
@@ -224,6 +247,14 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal[data-open="true"] {
+            display: block;
+        }
+
+        .modal[data-open="false"] {
+            display: none;
         }
 
         .modal-content {
@@ -359,15 +390,18 @@
         .close-sidebar:hover {
             opacity: 1;
         }
+        
     </style>
 
     <script>
+
         function openModal() {
-            document.getElementById('modal').style.display = 'block';
+            document.getElementById('modal').dataset.open = 'true';
         }
 
         function closeModal() {
-            document.getElementById('modal').style.display = 'none';
+            document.getElementById('modal').dataset.open = 'false';
+            document.getElementById('modal-content').innerHTML = '';
         }
 
         // Close modal when clicking outside
@@ -378,17 +412,6 @@
             }
         }
 
-        // Function to handle acronym row clicks
-        document.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target.id === 'acronym-details') {
-                document.getElementById('acronym-details').classList.add('active');
-            }
-        });
-
-        // Function to close the sidebar
-        function closeAcronymDetails() {
-            document.getElementById('acronym-details').classList.remove('active');
-        }
     </script>
 
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>

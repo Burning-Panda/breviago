@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
@@ -218,3 +219,11 @@ func SearchAcronyms(query string) ([]Acronym, error) {
 
 	return acronyms, nil
 }
+
+// Function to delete all deleted records after a given number of days
+func DeleteDeletedRecordsAfter(database *sql.DB, days int) error {
+	_, err := database.Exec("DELETE FROM acronyms WHERE deleted_at > ?", time.Now().AddDate(0, 0, -days))
+	return err
+}
+
+

@@ -96,12 +96,35 @@ func InitDB(db *gorm.DB) {
 				Acronym:     "breviago",
 				Meaning:     "Is a application for remembering abbreviations",
 				Description: "The main application for managing and remembering abbreviations",
+				OwnerID:     adminUser.ID,
+				OwnerType:   "user",
+				Synonyms: []Acronym{
+					{
+						UUID:        "00000000-0000-0000-0000-000000000001",
+						Acronym:     "SB",
+						Meaning:     "Synonym Breviago",
+						Description: "Is a synonym of breviago is a application for remembering abbreviations",
+						OwnerID:     adminUser.ID,
+						OwnerType:   "user",
+					},
+				},
+				Labels: []AcronymLabel{
+					
+				},
+				Comments: []AcronymComment{
+					{Comment: "breviago is a application for remembering abbreviations"},
+				},
+				History: []AcronymHistory{
+				},
+				Grants: []AcronymGrant{
+				},
 			}
 
 			if err := db.Create(&breviagoAcronym).Error; err != nil {
 				fmt.Printf("failed to create Breviago acronym: %v", err)
 				return
 			}
+
 			fmt.Println("Created Breviago acronym")
 		} else {
 			fmt.Printf("failed to check for Breviago acronym: %v", err)

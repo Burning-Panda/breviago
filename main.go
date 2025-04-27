@@ -89,6 +89,11 @@ func main() {
 		"sub": func(a, b int) int {
 			return a - b
 		},
+		"getAllAcronyms": func() []db.Acronym {
+			var acronyms []db.Acronym
+			db.GetGormDB().Find(&acronyms)
+			return acronyms
+		},
 	})
 
 	// parse base and partials
@@ -138,6 +143,7 @@ func main() {
 		})
 	})
 
+	r.GET("/acronyms/:id", getAcronym)
 	/* ######################################### */
 	/* ################## API ################## */
 	/* ######################################### */
@@ -157,7 +163,7 @@ func main() {
 	v1.POST("/acronyms/batch", createAcronyms)
 	v1.PUT("/acronyms/:id", updateAcronym)
 	v1.DELETE("/acronyms/:id", deleteAcronym)
-	v1.GET("/acronyms/:id", getAcronym)
+	v1.GET("/acronyms/:id", apiGetAcronym)
 	v1.GET("/acronyms/search", searchAcronyms)
 
 	authGroup := v1.Group("/auth")
@@ -263,7 +269,7 @@ func deleteAcronym(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Acronym deleted successfully"})
 }
 
-func getAcronym(c *gin.Context) {
+func apiGetAcronym(c *gin.Context) {
 	id := c.Param("id")
 	uuid, err := uuid.Parse(id)
 	if err != nil {
@@ -272,7 +278,7 @@ func getAcronym(c *gin.Context) {
 	}
 
 	var acronym db.Acronym
-	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
+	if err := db.GetGormDB().Joins("AcronymSynonyms").Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
 		return
 	}
@@ -291,4 +297,25 @@ func searchAcronyms(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, acronyms)
+}
+
+/* ############################################## */
+/* ###############      HTML      ############### */
+/* ############################################## */
+
+func getAcronym(c *gin.Context) {
+	id := c.Param("id")
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
+		return
+	}
+	
+	var acronym db.Acronym
+	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
+		return
+	}
+
+	c.HTML(http.StatusOK, "components/acronym_modal", gin.H{"Acronym": acronym})
 }
