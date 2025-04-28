@@ -286,9 +286,11 @@ func searchAcronyms(c *gin.Context) {
 /* ############################################## */
 
 func getAcronyms(c *gin.Context) {
+	timezone := c.Query("timezone")
 	var acronyms []db.Acronym
 	if err := db.GetGormDB().
 		Preload("Labels").
+		Preload("Related").
 		Find(&acronyms).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
 			return
@@ -297,11 +299,13 @@ func getAcronyms(c *gin.Context) {
 	c.HTML(http.StatusOK, "views/acronyms", gin.H{
 		"Title": "Acronyms",
 		"Acronyms": acronyms,
+		"Timezone": timezone,
 	})
 }
 
 func getAcronym(c *gin.Context) {
 	id := c.Param("id")
+	timezone := c.Query("timezone")
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
@@ -321,5 +325,5 @@ func getAcronym(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "components/AcronymContent", gin.H{"Acronym": acronym})
+	c.HTML(http.StatusOK, "components/AcronymContent", gin.H{"Acronym": acronym, "Timezone": timezone})
 }

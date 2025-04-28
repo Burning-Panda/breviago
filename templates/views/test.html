@@ -157,6 +157,28 @@
         </div>
     </div>
 
+    <div id="new-acronym-modal" class="modal" data-visible="false">
+        <div class="modal-content">
+            <h2>New Acronym</h2>
+            <form id="new-acronym-form">
+                <input type="text" id="acronym-input" placeholder="Acronym">
+                <input type="text" id="acronym-input" placeholder="Meaning">
+                <input type="text" id="acronym-input" placeholder="Description">
+                <!-- HTML multi select tags with search -->
+                <datalist id="acronym-tags">
+                    <option value="backend">Backend</option>
+                    <option value="business">Business</option>
+                    <option value="database">Database</option>
+                    <option value="design">Design</option>
+                    <option value="devops">DevOps</option>
+                </datalist>
+
+                <input type="text" id="acronym-input" placeholder="Related Acronyms">
+
+            </form>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 
     <link rel="stylesheet" type="text/css"
@@ -178,6 +200,20 @@
             const userProfileDropdown = document.getElementById('user-profile-dropdown');
             userProfileDropdown.dataset.visible = userProfileDropdown.dataset.visible === 'true' ? 'false' : 'true';
         }
+
+        // Get user's timezone and store it in a data attribute
+        document.addEventListener('DOMContentLoaded', function () {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.body.dataset.timezone = timezone;
+
+            // Update all acronym items with the timezone
+            document.querySelectorAll('.acronym-item').forEach(item => {
+                const currentHref = item.getAttribute('hx-get');
+                if (currentHref) {
+                    item.setAttribute('hx-get', currentHref + '?timezone=' + encodeURIComponent(timezone));
+                }
+            });
+        });
     </script>
 
 </body>
@@ -227,32 +263,29 @@
                 <div class="acronym-details-meta-item">
                     <i class="ph ph-calendar acronym-details-meta-icon"></i>
                     <div>
-                        <p>Created: {{ .Acronym.CreatedAt }}</p>
-                        <p>Updated: {{ .Acronym.UpdatedAt }}</p>
+                        <p>Created: {{ .Acronym.CreatedAt.Format "2006-01-02 15:04:05" }}</p>
+                        <p>Updated: {{ .Acronym.UpdatedAt.Format "2006-01-02 15:04:05" }}</p>
                     </div>
                 </div>
-                <div class="acronym-details-meta-item">
+                <!-- TODO: Created by
+                 <div class="acronym-details-meta-item">
                     <i class="ph ph-user acronym-details-meta-icon"></i>
-                    <p>Created by: {{ .Acronym.Owner.Name }}</p>
+                    <p>Created by: {{ .Acronym.Owner }}</p>
                 </div>
+                 -->
             </div>
         </div>
     </div>
     <div class="acronym-details-related">
         <h3 class="acronym-details-related-title">Related Acronyms</h3>
         <div class="acronym-details-related-grid">
+            {{ range .Acronym.Related }}
             <div class="acronym-details-related-item">
-                <h4 class="acronym-details-related-name">PROGRAMMING</h4>
-                <p class="acronym-details-related-description">Related to programming</p>
+                <h4 class="acronym-details-related-name">{{ .Acronym }}</h4>
+                <!-- TODO: Related to by the tag -->
+                <p class="acronym-details-related-description">Related to {{ .Labels.Label }}</p>
             </div>
-            <div class="acronym-details-related-item">
-                <h4 class="acronym-details-related-name">WEB</h4>
-                <p class="acronym-details-related-description">Related to web</p>
-            </div>
-            <div class="acronym-details-related-item">
-                <h4 class="acronym-details-related-name">BACKEND</h4>
-                <p class="acronym-details-related-description">Related to backend</p>
-            </div>
+            {{ end }}
         </div>
     </div>
     {{ else }}
