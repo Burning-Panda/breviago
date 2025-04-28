@@ -73,7 +73,7 @@ func main() {
 		"getCurrentYear": func() int {
 			return time.Now().Year()
 		},
-		"getAppName": func() string {
+		"GetAppName": func() string {
 			return appName
 		},
 		"getRelatedAcronyms": func(acronyms []db.Acronym) []db.Acronym {
@@ -134,14 +134,7 @@ func main() {
 
 	
 
-	r.GET("/acronyms", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "testing", gin.H{
-			"Acronyms": []db.Acronym{
-				{Acronym: "API", Meaning: "Application Programming Interface"},
-				{Acronym: "HTTP", Meaning: "Hypertext Transfer Protocol"},
-			},
-		})
-	})
+	r.GET("/acronyms", getAcronyms)
 
 	r.GET("/acronyms/:id", getAcronym)
 	/* ######################################### */
@@ -175,14 +168,6 @@ func main() {
 	r.Run(":8060")
 }
 
-func getAcronyms(c *gin.Context) {
-	var acronyms []db.Acronym
-	if err := db.GetGormDB().Find(&acronyms).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
-		return
-	}
-	c.JSON(http.StatusOK, acronyms)
-}
 
 func createAcronym(c *gin.Context) {
 	var acronym db.Acronym
@@ -300,6 +285,21 @@ func searchAcronyms(c *gin.Context) {
 /* ###############      HTML      ############### */
 /* ############################################## */
 
+func getAcronyms(c *gin.Context) {
+	var acronyms []db.Acronym
+	if err := db.GetGormDB().
+		Preload("Labels").
+		Find(&acronyms).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
+			return
+	}
+
+	c.HTML(http.StatusOK, "views/acronyms", gin.H{
+		"Title": "Acronyms",
+		"Acronyms": acronyms,
+	})
+}
+
 func getAcronym(c *gin.Context) {
 	id := c.Param("id")
 	uuid, err := uuid.Parse(id)
@@ -315,8 +315,6 @@ func getAcronym(c *gin.Context) {
 		Preload("Comments").
 		Preload("History").
 		Preload("Grants").
-		Preload("Owner", "owner_type = ?", "user").
-		Preload("Owner", "owner_type = ?", "organization").
 		Where("uuid = ?", uuid.String()).
 		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})

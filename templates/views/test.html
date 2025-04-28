@@ -1,11 +1,11 @@
-{{ define "testing" }}
+{{ define "views/acronyms" }}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>{{ .Title }} - {{ .GetAppName }}</title>
     <link rel="stylesheet" href="/public/css/reset.css">
     <link rel="stylesheet" href="/public/css/test.css">
 </head>
@@ -118,8 +118,8 @@
                         </div>
                     </div>
                     <div class="acronym-items">
-                        {{ range $i := 10 }}
-                        <div class="acronym-item" hx-get="/acronyms/{{ $i }}" hx-target="#acronym-details"
+                        {{ range .Acronyms }}
+                        <div class="acronym-item" hx-get="/acronyms/{{ .UUID }}" hx-target="#acronym-details"
                             hx-swap="innerHTML">
                             <div class="acronym-item-content">
                                 <div class="acronym-item-checkbox">
@@ -127,25 +127,26 @@
                                 </div>
                                 <div class="acronym-item-main">
                                     <div class="acronym-item-header">
-                                        <h3 class="acronym-item-title">API</h3>
+                                        <h3 class="acronym-item-title">{{ .Acronym }}</h3>
                                         <button class="btn btn-icon acronym-item-actions">
                                             <i class="ph ph-dots-three-outline-horizontal"></i>
                                         </button>
                                     </div>
-                                    <p class="acronym-item-description">Application Programming Interface</p>
-                                    <p class="acronym-item-description">A set of definitions and protocols for building
-                                        and integrating application software.</p>
+                                    <p class="acronym-item-description">{{ .Meaning }}</p>
+                                    <p class="acronym-item-description">{{ .Description }}</p>
                                     <div class="acronym-item-tags">
-                                        <span class="acronym-tag">programming</span>
-                                        <span class="acronym-tag">web</span>
-                                        <span class="acronym-tag">backend</span>
-                                        <span class="acronym-item-date">Jan 17, 2023, 01:00 AM</span>
+                                        {{ range .Labels }}
+                                        <span class="acronym-tag">{{ .Label }}</span>
+                                        {{ end }}
+                                        <time class="acronym-item-date"
+                                            datetime='{{ .UpdatedAt.Format "2006-01-02T15:04:05Z07:00" }}'>
+                                            {{ .UpdatedAt.Format "Jan 2, 2006" }}
+                                        </time>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         {{ end }}
-                        <!-- Repeat similar structure for other acronym items -->
                     </div>
                 </div>
 

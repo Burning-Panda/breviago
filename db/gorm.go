@@ -138,7 +138,7 @@ type Acronym struct {
 	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
 
 	Related     []Acronym `gorm:"many2many:acronym_relations;"`
-	Labels      []AcronymLabel   `gorm:"foreignKey:AcronymID"`
+	Labels      []Label   `gorm:"many2many:acronym_labels;"`
 	Comments    []AcronymComment `gorm:"foreignKey:AcronymID"`
 	History     []AcronymHistory `gorm:"foreignKey:AcronymID"`
 	Grants      []AcronymGrant   `gorm:"foreignKey:AcronymID"`
@@ -175,16 +175,6 @@ type AcronymCategory struct {
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type AcronymLabel struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
-	AcronymID uint      `json:"acronym_id"`
-	LabelID   uint      `json:"label_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type AcronymHistory struct {
@@ -248,7 +238,6 @@ func (a *Acronym) SetUUID(uuid string) { a.UUID = uuid }
 func (c *Category) SetUUID(uuid string) { c.UUID = uuid }
 func (l *Label) SetUUID(uuid string) { l.UUID = uuid }
 func (ac *AcronymCategory) SetUUID(uuid string) { ac.UUID = uuid }
-func (al *AcronymLabel) SetUUID(uuid string) { al.UUID = uuid }
 func (ah *AcronymHistory) SetUUID(uuid string) { ah.UUID = uuid }
 func (ac *AcronymComment) SetUUID(uuid string) { ac.UUID = uuid }
 func (ag *AcronymGrant) SetUUID(uuid string) { ag.UUID = uuid }
@@ -298,10 +287,6 @@ func (ac *AcronymCategory) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, ac)
 }
 
-func (al *AcronymLabel) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, al)
-}
-
 func (ah *AcronymHistory) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, ah)
 }
@@ -349,7 +334,6 @@ func GetGormDB() *gorm.DB {
 			&Category{},
 			&Label{},
 			&AcronymCategory{},
-			&AcronymLabel{},
 			&AcronymHistory{},
 			&AcronymComment{},
 			&AcronymGrant{},

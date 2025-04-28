@@ -20,7 +20,7 @@ func InitDB(db *gorm.DB) {
 
 	// Check if admin user exists
 	var adminUser User
-	if err := db.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
+	if err := db.Where("name = ?", "admin").First(&adminUser).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			// Create admin user
 			hashedPassword, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
@@ -30,9 +30,10 @@ func InitDB(db *gorm.DB) {
 			}
 
 			adminUser = User{
-				Username: "admin",
-				Password: string(hashedPassword),
-				Email:    "admin@breviago.com",
+				Name:  "admin",
+				LegalName: "Administrator",
+				Password:  string(hashedPassword),
+				Email:     "admin@breviago.com",
 			}
 
 			if err := db.Create(&adminUser).Error; err != nil {
@@ -108,8 +109,10 @@ func InitDB(db *gorm.DB) {
 						OwnerType:   "user",
 					},
 				},
-				Labels: []AcronymLabel{
-					
+				Labels: []Label{
+					{
+						Label: "Root",
+					},
 				},
 				Comments: []AcronymComment{
 					{Comment: "breviago is a application for remembering abbreviations"},

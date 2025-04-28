@@ -117,7 +117,7 @@ func LoginHandler(database *gorm.DB) gin.HandlerFunc {
 		// Generate JWT token
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"user_id":  user.UUID,
-			"username": user.Username,
+			"username": user.Name,
 			"exp":      time.Now().Add(time.Hour * 24).Unix(),
 		})
 		
@@ -153,13 +153,13 @@ func RegisterHandler(database *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		contentType := c.Request.Header.Get("Content-Type")
 		
-		var username, password, email string
+		var name, password, email string
 		var user db.User
 		
 		if contentType == "application/json" {
 			// Handle JSON request
 			var registerRequest struct {
-				Username string `json:"username" binding:"required"`
+				Name     string `json:"name" binding:"required"`
 				Password string `json:"password" binding:"required"`
 				Email    string `json:"email" binding:"required"`
 			}
@@ -169,18 +169,18 @@ func RegisterHandler(database *gorm.DB) gin.HandlerFunc {
 				return
 			}
 
-			username = registerRequest.Username
+			name = registerRequest.Name
 			password = registerRequest.Password
 			email = registerRequest.Email
 		} else {
 			// Handle form submission
-			username = c.PostForm("username")
+			name = c.PostForm("name")
 			password = c.PostForm("password")
 			email = c.PostForm("email")
 		}
 
 		// Check if the user already exists
-		if err := database.Where("username = ?", username).First(&user).Error; err == nil {
+		if err := database.Where("name = ?", name).First(&user).Error; err == nil {
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 			return
 		}
@@ -194,7 +194,7 @@ func RegisterHandler(database *gorm.DB) gin.HandlerFunc {
 
 		// Create the user
 		user = db.User{
-			Username: username,
+			Name: name,
 			Password: string(hashedPassword),
 			Email:    email,
 		}
@@ -245,7 +245,7 @@ func RefreshHandler(database *gorm.DB) gin.HandlerFunc {
 			// Generate a new access token
 			accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 				"user_id":  user.UUID,
-				"username": user.Username,
+				"username": user.Name,
 				"exp":      time.Now().Add(time.Minute * 15).Unix(),
 			})
 
@@ -270,7 +270,7 @@ func RefreshHandler(database *gorm.DB) gin.HandlerFunc {
 			// Generate a new access token
 			accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 				"user_id":  user.UUID,
-				"username": user.Username,
+				"username": user.Name,
 				"exp":      time.Now().Add(time.Minute * 15).Unix(),
 			})
 
