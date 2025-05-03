@@ -18,8 +18,9 @@ func InitDB(db *gorm.DB) {
 		return
 	}
 
-	// Check if admin user exists
+	// Admin user
 	var adminUser User
+	// Check if admin user exists
 	if err := db.Where("name = ?", "admin").First(&adminUser).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			// Create admin user
@@ -97,16 +98,14 @@ func InitDB(db *gorm.DB) {
 				Acronym:     "breviago",
 				Meaning:     "Is a application for remembering abbreviations",
 				Description: "The main application for managing and remembering abbreviations",
-				OwnerID:     adminUser.ID,
-				OwnerType:   "user",
+				Owner:       adminUser,
 				Related: []Acronym{
 					{
 						UUID:        "00000000-0000-0000-0000-000000000001",
 						Acronym:     "SB",
 						Meaning:     "Relation Breviago",
 						Description: "Is a relation of breviago is a application for remembering abbreviations",
-						OwnerID:     adminUser.ID,
-						OwnerType:   "user",
+						Owner:       adminUser,
 					},
 				},
 				Labels: []Label{
@@ -114,12 +113,10 @@ func InitDB(db *gorm.DB) {
 						Label: "Root",
 					},
 				},
-				Comments: []AcronymComment{
-					{Comment: "breviago is a application for remembering abbreviations"},
+				Notes: []Notes{
+					{Note: "breviago is a application for remembering abbreviations", User: adminUser},
 				},
-				History: []AcronymHistory{
-				},
-				Grants: []AcronymGrant{
+				Grants: []Grant{
 				},
 			}
 
@@ -143,8 +140,7 @@ func InitDB(db *gorm.DB) {
 			rootFolder = Folder{
 				Name:        "Root Folder",
 				Description: "The root folder for Breviago",
-				OwnerID:     adminUser.ID,
-				OwnerType:   "user",
+				Owner:       adminUser,
 			}
 
 			if err := db.Create(&rootFolder).Error; err != nil {
@@ -166,8 +162,7 @@ func InitDB(db *gorm.DB) {
 			rootDocument = Document{
 				Name:       "Root Document",
 				Content:	"The root document for Breviago",
-				OwnerID:    adminUser.ID,
-				OwnerType:  "user",
+				Owner:      adminUser,
 			}
 
 			if err := db.Create(&rootDocument).Error; err != nil {

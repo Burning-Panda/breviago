@@ -214,6 +214,14 @@
                 }
             });
         });
+
+        function editAcronym(uuid) {
+            console.log(uuid);
+        }
+
+        function deleteAcronym(uuid) {
+            console.log(uuid);
+        }
     </script>
 
 </body>
@@ -228,13 +236,13 @@
         <button class="btn btn-icon">
             <i class="ph ph-share"></i>
         </button>
-        <button class="btn btn-icon">
+        <button class="btn btn-icon" onclick="editAcronym('{{ .Acronym.UUID }}')">
             <i class="ph ph-pen"></i>
         </button>
-        <button class="btn btn-icon btn-danger">
+        <button class="btn btn-icon btn-danger" hx-delete="/acronyms/{{ .Acronym.UUID }}">
             <i class="ph ph-trash"></i>
         </button>
-        <button class="btn btn-icon">
+        <button style="display: none;" aria-hidden="true" class="btn btn-icon">
             <i class="ph ph-x"></i>
         </button>
     </div>
@@ -243,13 +251,14 @@
     {{ if .Acronym }}
     <div class="acronym-details-main">
         <div class="acronym-details-header-content">
-            <h1 class="acronym-details-name">{{ .Acronym.Acronym }}</h1>
+            <h2 class="acronym-details-name">{{ .Acronym.Acronym }}</h2>
         </div>
-        <h2 class="acronym-details-full-name">{{ .Acronym.Meaning }}</h2>
+        <h3 class="acronym-details-full-name">{{ .Acronym.Meaning }}</h3>
         <div class="acronym-details-description">
             <h3 class="acronym-details-description-title">Description</h3>
             <p class="acronym-details-description-text">{{ .Acronym.Description }}</p>
         </div>
+        {{ if .Acronym.Labels }}
         <div class="acronym-details-tags">
             <h3 class="acronym-details-tags-title">Tags</h3>
             <div class="acronym-details-tags-list">
@@ -258,6 +267,7 @@
                 {{ end }}
             </div>
         </div>
+        {{ end }}
         <div class="acronym-details-meta">
             <div class="acronym-details-meta-grid">
                 <div class="acronym-details-meta-item">
@@ -267,76 +277,95 @@
                         <p>Updated: {{ .Acronym.UpdatedAt.Format "2006-01-02 15:04:05" }}</p>
                     </div>
                 </div>
+                {{/*
                 <!-- TODO: Created by
                  <div class="acronym-details-meta-item">
                     <i class="ph ph-user acronym-details-meta-icon"></i>
                     <p>Created by: {{ .Acronym.Owner }}</p>
                 </div>
                  -->
+                */}}
             </div>
         </div>
     </div>
-    <div class="acronym-details-related">
-        <h3 class="acronym-details-related-title">Related Acronyms</h3>
-        <div class="acronym-details-related-grid">
-            {{ range .Acronym.Related }}
-            <div class="acronym-details-related-item">
-                <h4 class="acronym-details-related-name">{{ .Acronym }}</h4>
-                <!-- TODO: Related to by the tag -->
-                <p class="acronym-details-related-description">Related to {{ .Labels.Label }}</p>
+
+    <div class="acronym-details-notes">
+        <h3 class="acronym-details-notes-title">Notes</h3>
+        <div class="acronym-details-notes-list">
+            {{ range .Acronym.Notes }}
+            <div class="acronym-details-note">
+                <div class="acronym-details-note-header">
+                    <span class="acronym-details-note-author">
+                        <i class="ph ph-user"></i> {{ .User.Name }}
+                    </span>
+                    <span class="acronym-details-note-date">
+                        {{ .CreatedAt.Format "Jan 2, 2006 15:04" }}
+                    </span>
+                </div>
+                <p class="acronym-details-note-text">{{ .Note }}</p>
             </div>
             {{ end }}
         </div>
     </div>
-    {{ else }}
-    {{ template "components/AcronymListNoContent" . }}
-    {{ end }}
-</div>
-{{ end }}
 
-{{ define "components/AcronymListNoContent"}}
-<div class="acronym-no-content">
-    <div class="acronym-no-content-box">
-        <h3 class="acronym-no-content-title">No acronym selected</h3>
-        <p class="acronym-no-content-description">Select an acronym from the list to view its details or create a
-            new one to get started.</p><button class="acronym-no-content-button">
-            <i class="ph ph-plus"></i>
-            Create new acronym</button>
-    </div>
-</div>
-{{ end }}
-
-{{ define "components/AcronymFolder"}}
-<div class="sidebar-section">
-    <div class="sidebar-title">
-        <h3>Folders</h3>
-        <button class="btn btn-icon">
-            <i class="ph ph-folder-plus"></i>
-            <span>New Folder</span>
-        </button>
-    </div>
-    <div class="folder-list">
-        <div class="sidebar-item">
-            <button class="btn">
-                <i class="ph ph-caret-down"></i>
-            </button>
-            <i class="ph ph-folder sidebar-item-icon"></i>
-            <span>Technology</span>
+    <div class="acronym-details-history">
+        <h3 class="acronym-details-history-title">History</h3>
+        <div class="acronym-details-history-list">
+            {{ range .Revisions }}
+            <div class="acronym-details-history-item">
+                <p class="acronym-details-history-item-text">{{ .Action }}</p>
+            </div>
+            {{ end }}
         </div>
-        <div class="folder-subitem">
+        {{ else }}
+        {{ template "components/AcronymListNoContent" . }}
+        {{ end }}
+    </div>
+    {{ end }}
+
+    {{ define "components/AcronymListNoContent"}}
+    <div class="acronym-no-content">
+        <div class="acronym-no-content-box">
+            <h3 class="acronym-no-content-title">No acronym selected</h3>
+            <p class="acronym-no-content-description">Select an acronym from the list to view its details or create a
+                new one to get started.</p><button class="acronym-no-content-button">
+                <i class="ph ph-plus"></i>
+                Create new acronym</button>
+        </div>
+    </div>
+    {{ end }}
+
+    {{ define "components/AcronymFolder"}}
+    <div class="sidebar-section">
+        <div class="sidebar-title">
+            <h3>Folders</h3>
+            <button class="btn btn-icon">
+                <i class="ph ph-folder-plus"></i>
+                <span>New Folder</span>
+            </button>
+        </div>
+        <div class="folder-list">
+            <div class="sidebar-item">
+                <button class="btn">
+                    <i class="ph ph-caret-down"></i>
+                </button>
+                <i class="ph ph-folder sidebar-item-icon"></i>
+                <span>Technology</span>
+            </div>
+            <div class="folder-subitem">
+                <div class="sidebar-item">
+                    <i class="ph ph-folder sidebar-item-icon"></i>
+                    <span>Programming</span>
+                </div>
+            </div>
             <div class="sidebar-item">
                 <i class="ph ph-folder sidebar-item-icon"></i>
-                <span>Programming</span>
+                <span>Business</span>
+            </div>
+            <div class="sidebar-item">
+                <i class="ph ph-folder sidebar-item-icon"></i>
+                <span>Healthcare</span>
             </div>
         </div>
-        <div class="sidebar-item">
-            <i class="ph ph-folder sidebar-item-icon"></i>
-            <span>Business</span>
-        </div>
-        <div class="sidebar-item">
-            <i class="ph ph-folder sidebar-item-icon"></i>
-            <span>Healthcare</span>
-        </div>
     </div>
-</div>
-{{ end }}
+    {{ end }}

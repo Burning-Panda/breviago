@@ -22,6 +22,10 @@ var unprotectedRoutes = []string{"", "/", "/login", "/register", "/public", "/fa
 	"/home",
 }
 
+var (
+	database *gorm.DB
+)
+
 func initApplication(database *gorm.DB) error {
 	// Check if admin user exists
 	db.InitDB(database)
@@ -31,7 +35,7 @@ func initApplication(database *gorm.DB) error {
 
 func main() {
 	// Initialize database
-	database := db.GetGormDB()
+	database = db.GetGormDB()
 	if database == nil {
 		log.Fatal("Failed to initialize database")
 	}
@@ -91,7 +95,7 @@ func main() {
 		},
 		"getAllAcronyms": func() []db.Acronym {
 			var acronyms []db.Acronym
-			db.GetGormDB().Find(&acronyms)
+			database.Find(&acronyms)
 			return acronyms
 		},
 	})
@@ -176,7 +180,7 @@ func createAcronym(c *gin.Context) {
 		return
 	}
 
-	if err := db.GetGormDB().Create(&acronym).Error; err != nil {
+	if err := database.Create(&acronym).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronym"})
 		return
 	}
@@ -191,7 +195,7 @@ func createAcronyms(c *gin.Context) {
 		return
 	}
 
-	if err := db.GetGormDB().Create(&acronyms).Error; err != nil {
+	if err := database.Create(&acronyms).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronyms"})
 		return
 	}
@@ -208,7 +212,7 @@ func updateAcronym(c *gin.Context) {
 	}
 
 	var acronym db.Acronym
-	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
+	if err := database.Where("uuid = ?", uuid.String()).First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
 		return
 	}
@@ -218,7 +222,7 @@ func updateAcronym(c *gin.Context) {
 		return
 	}
 
-	if err := db.GetGormDB().Save(&acronym).Error; err != nil {
+	if err := database.Save(&acronym).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update acronym"})
 		return
 	}
@@ -234,7 +238,7 @@ func deleteAcronym(c *gin.Context) {
 		return
 	}
 
-	if err := db.GetGormDB().Where("uuid = ?", uuid.String()).Delete(&db.Acronym{}).Error; err != nil {
+	if err := database.Where("uuid = ?", uuid.String()).Delete(&db.Acronym{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete acronym"})
 		return
 	}
@@ -250,29 +254,35 @@ func apiGetAcronym(c *gin.Context) {
 		return
 	}
 
+
 	var acronym db.Acronym
-	if err := db.GetGormDB().
+	if err := database.
 		Preload("Related").
 		Preload("Labels").
-		Preload("Comments").
-		Preload("History").
+		Preload("Notes").
+		Preload("Notes.User").
 		Preload("Grants").
-		Preload("Owner", "owner_type = ?", "user").
-		Preload("Owner", "owner_type = ?", "organization").
+		Preload("Owner").
 		Where("uuid = ?", uuid.String()).
 		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, acronym)
+	revisions := database.Model(&db.Revision{}).Where("foreign_key_type = ?", "acronym").Where("foreign_key_id = ?", acronym.ID)
+	fmt.Println(revisions)
+
+	c.JSON(http.StatusOK, gin.H{
+		"acronym": acronym,
+		"revisions": revisions,
+	})
 }
 
 func searchAcronyms(c *gin.Context) {
 	query := c.Query("query")
 	var acronyms []db.Acronym
 
-	if err := db.GetGormDB().Where("short_form ILIKE ? OR long_form ILIKE ?",
+	if err := database.Where("short_form ILIKE ? OR long_form ILIKE ?",
 		"%"+query+"%", "%"+query+"%").Find(&acronyms).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search acronyms"})
 		return
@@ -288,7 +298,7 @@ func searchAcronyms(c *gin.Context) {
 func getAcronyms(c *gin.Context) {
 	timezone := c.Query("timezone")
 	var acronyms []db.Acronym
-	if err := db.GetGormDB().
+	if err := database.
 		Preload("Labels").
 		Preload("Related").
 		Find(&acronyms).Error; err != nil {
@@ -313,12 +323,14 @@ func getAcronym(c *gin.Context) {
 	}
 	
 	var acronym db.Acronym
-	if err := db.GetGormDB().
+	if err := database.
 		Preload("Related").
 		Preload("Labels").
-		Preload("Comments").
+		Preload("Notes").
+		Preload("Notes.User").
 		Preload("History").
 		Preload("Grants").
+		Preload("Owner").
 		Where("uuid = ?", uuid.String()).
 		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})

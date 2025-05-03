@@ -1,8 +1,9 @@
 package db
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/google/uuid"
@@ -49,6 +50,8 @@ type UserSettings struct {
 type AuditLog struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UserID    uint      `json:"user_id"`
+	User      User      `gorm:"foreignKey:UserID" json:"user"`
+
 	Event     string    `gorm:"not null" json:"event"`
 	Action    string    `gorm:"not null" json:"action"`
 	Data      string    `gorm:"not null" json:"data"`
@@ -62,6 +65,9 @@ type Organization struct {
 	UUID        string    `gorm:"type:text" json:"uuid"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
+
+	Members     []OrganizationMember `gorm:"foreignKey:OrganizationID" json:"members"`
+
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
@@ -71,60 +77,12 @@ type OrganizationMember struct {
 	ID             uint      `gorm:"primaryKey" json:"id"`
 	UUID           string    `gorm:"type:text" json:"uuid"`
 	OrganizationID uint      `json:"organization_id"`
-	UserID         uint      `json:"user_id"`
 	IsAdmin        bool      `json:"is_admin"`
+
+	UserID         uint      `json:"user_id"`
+	User           User      `gorm:"foreignKey:UserID" json:"user"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type Folder struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:text;unique;index" json:"uuid"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	OwnerID     uint      `json:"owner_id"`
-	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
-	ParentID    *uint     `json:"parent_id"`  // Nullable for root folders
-	IsPublic    bool      `json:"is_public"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type FolderGrant struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
-	FolderID  uint      `json:"folder_id"`
-	GranteeID uint      `json:"grantee_id"`
-	GranteeType string  `json:"grantee_type"` // "user", "organization", or "group"
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type Document struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:text" json:"uuid"`
-	Name        string    `json:"name"`
-	Content     string    `json:"content"`
-	OwnerID     uint      `json:"owner_id"`
-	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
-	FolderID    uint      `json:"folder_id"`
-	IsPublic    bool      `json:"is_public"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type DocumentGrant struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:text" json:"uuid"`
-	DocumentID  uint      `json:"document_id"`
-	GranteeID   uint      `json:"grantee_id"`
-	GranteeType string    `json:"grantee_type"` // "user", "organization", or "group"
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
@@ -135,24 +93,13 @@ type Acronym struct {
 	Meaning     string    `json:"meaning"`
 	Description string    `json:"description"`
 	OwnerID     uint      `json:"owner_id"`
-	OwnerType   string    `gorm:"type:text" json:"owner_type"` // "user" or "organization"
-
+	
+	Owner       User      `gorm:"foreignKey:OwnerID" json:"owner"`
 	Related     []Acronym `gorm:"many2many:acronym_relations;"`
 	Labels      []Label   `gorm:"many2many:acronym_labels;"`
-	Comments    []AcronymComment `gorm:"foreignKey:AcronymID"`
-	History     []AcronymHistory `gorm:"foreignKey:AcronymID"`
-	Grants      []AcronymGrant   `gorm:"foreignKey:AcronymID"`
+	Notes       []Notes `gorm:"foreignKey:AcronymID" json:"notes"`
+	Grants      []Grant   `gorm:"foreignKey:AcronymID" json:"grants"`
 
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type Category struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:text" json:"uuid"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
@@ -167,38 +114,19 @@ type Label struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
-type AcronymCategory struct {
-	ID         uint      `gorm:"primaryKey" json:"id"`
-	UUID       string    `gorm:"type:text" json:"uuid"`
-	AcronymID  uint      `json:"acronym_id"`
-	CategoryID uint      `json:"category_id"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type AcronymHistory struct {
+type Notes struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UUID      string    `gorm:"type:text" json:"uuid"`
 	AcronymID uint      `json:"acronym_id"`
-	Action    string    `json:"action"`
-	Data      string    `json:"data"`
+	UserID    uint      `json:"user_id"`
+	Note      string    `json:"note"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	User      User      `gorm:"foreignKey:UserID" json:"user"`
 }
 
-type AcronymComment struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
-	AcronymID uint      `json:"acronym_id"`
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-}
-
-type AcronymGrant struct {
+type Grant struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UUID      string    `gorm:"type:text" json:"uuid"`
 	AcronymID uint      `json:"acronym_id"`
@@ -209,6 +137,22 @@ type AcronymGrant struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
+type Revision struct {
+	ID             uint           `gorm:"primaryKey" json:"id"`
+	UUID           string         `gorm:"type:text" json:"uuid"`
+	ForeignKeyID   uint           `json:"foreign_key_id"`
+	ForeignKeyType string         `json:"foreign_key_type"`
+	UserID         uint           `json:"user_id"`
+	User           User           `gorm:"foreignKey:UserID" json:"user"`
+	Action         string         `json:"action"`
+	OldValue       string         `json:"old_value"`
+	NewValue       string         `json:"new_value"`
+	ChangeSummary  string         `json:"change_summary"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
 // UUIDable interface for models that need UUID generation
 type UUIDable interface {
 	SetUUID(uuid string)
@@ -216,7 +160,6 @@ type UUIDable interface {
 
 // GenerateUUID generates a UUID for any model that implements UUIDable
 func GenerateUUID(tx *gorm.DB, model UUIDable) error {
-	
 	model.SetUUID(uuid.New().String())
 
 	if tx.Error != nil {
@@ -230,17 +173,10 @@ func GenerateUUID(tx *gorm.DB, model UUIDable) error {
 func (u *User) SetUUID(uuid string) { u.UUID = uuid }
 func (o *Organization) SetUUID(uuid string) { o.UUID = uuid }
 func (om *OrganizationMember) SetUUID(uuid string) { om.UUID = uuid }
-func (f *Folder) SetUUID(uuid string) { f.UUID = uuid }
-func (fg *FolderGrant) SetUUID(uuid string) { fg.UUID = uuid }
-func (d *Document) SetUUID(uuid string) { d.UUID = uuid }
-func (dg *DocumentGrant) SetUUID(uuid string) { dg.UUID = uuid }
 func (a *Acronym) SetUUID(uuid string) { a.UUID = uuid }
-func (c *Category) SetUUID(uuid string) { c.UUID = uuid }
 func (l *Label) SetUUID(uuid string) { l.UUID = uuid }
-func (ac *AcronymCategory) SetUUID(uuid string) { ac.UUID = uuid }
-func (ah *AcronymHistory) SetUUID(uuid string) { ah.UUID = uuid }
-func (ac *AcronymComment) SetUUID(uuid string) { ac.UUID = uuid }
-func (ag *AcronymGrant) SetUUID(uuid string) { ag.UUID = uuid }
+func (ac *Notes) SetUUID(uuid string) { ac.UUID = uuid }
+func (ag *Grant) SetUUID(uuid string) { ag.UUID = uuid }
 
 // BeforeCreate hooks using the generic GenerateUUID function
 func (u *User) BeforeCreate(tx *gorm.DB) error {
@@ -255,60 +191,66 @@ func (om *OrganizationMember) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, om)
 }
 
-func (f *Folder) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, f)
-}
-
-func (fg *FolderGrant) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, fg)
-}
-
-func (d *Document) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, d)
-}
-
-func (dg *DocumentGrant) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, dg)
-}
-
 func (a *Acronym) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, a)
-}
-
-func (c *Category) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, c)
 }
 
 func (l *Label) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, l)
 }
 
-func (ac *AcronymCategory) BeforeCreate(tx *gorm.DB) error {
+func (ac *Notes) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, ac)
 }
 
-func (ah *AcronymHistory) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, ah)
-}
-
-func (ac *AcronymComment) BeforeCreate(tx *gorm.DB) error {
-	return GenerateUUID(tx, ac)
-}
-
-func (ag *AcronymGrant) BeforeCreate(tx *gorm.DB) error {
+func (ag *Grant) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, ag)
 }
 
-func (a *Acronym) AfterSave(tx *gorm.DB) error {
-	// Create a new history record when an acronym is saved
-	history := AcronymHistory{
-		AcronymID: a.ID,
-		Action:    "save",
-		Data:      fmt.Sprintf("%+v", a),
-	}
-	
-	return tx.Create(&history).Error
+// Revisionable interface for models that support revision history
+// Must return the primary key, type name, and a summary of the change
+// Optionally, you can add more methods as needed
+//
+
+type Revisionable interface {
+	GetID() uint
+	GetTypeName() string
 }
+
+// revisionCreateHelper creates a revision for any Revisionable model
+func revisionCreateHelper(tx *gorm.DB, model Revisionable, action string, userID uint) error {
+	typeName := model.GetTypeName()
+	id := model.GetID()
+
+	// Use reflection to create a pointer to the model type
+	oldValue := reflect.New(reflect.TypeOf(model).Elem()).Interface()
+	if err := tx.Unscoped().First(oldValue, id).Error; err != nil {
+		return err
+	}
+	oldJSON, _ := json.Marshal(oldValue)
+	newJSON, _ := json.Marshal(model)
+
+	revision := Revision{
+		UUID:           uuid.New().String(),
+		ForeignKeyID:   id,
+		ForeignKeyType: typeName,
+		UserID:         userID,
+		Action:         action,
+		OldValue:       string(oldJSON),
+		NewValue:       string(newJSON),
+		ChangeSummary:  "",
+	}
+	return tx.Create(&revision).Error
+}
+
+// Example implementation for Acronym
+func (a *Acronym) GetID() uint { return a.ID }
+func (a *Acronym) GetTypeName() string { return "Acronym" }
+func (a *Acronym) BeforeUpdate(tx *gorm.DB) error {
+	return revisionCreateHelper(tx, a, "update", 0) // Replace 0 with actual user ID if available
+}
+
+
 
 
 func GetGormDB() *gorm.DB {
@@ -326,17 +268,11 @@ func GetGormDB() *gorm.DB {
 			&User{},
 			&Organization{},
 			&OrganizationMember{},
-			&Folder{},
-			&FolderGrant{},
-			&Document{},
-			&DocumentGrant{},
 			&Acronym{},
-			&Category{},
 			&Label{},
-			&AcronymCategory{},
-			&AcronymHistory{},
-			&AcronymComment{},
-			&AcronymGrant{},
+			&Revision{},
+			&Notes{},
+			&Grant{},
 		)
 		if err != nil {
 			log.Fatal("Failed to migrate database:", err)
