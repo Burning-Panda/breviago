@@ -112,7 +112,7 @@
                             <button class="btn btn-icon">
                                 <i class="ph ph-download-simple"></i>
                             </button>
-                            <button class="btn btn-primary">
+                            <button class="btn btn-primary" onclick="newAcronym()">
                                 <i class="ph ph-plus"></i>
                             </button>
                         </div>
@@ -161,24 +161,46 @@
         </div>
     </div>
 
+    <div id="modal-overlay" class="modal-overlay" data-visible="false"></div>
+
     <div id="new-acronym-modal" class="modal" data-visible="false">
-        <div class="modal-content">
+        <div class="modal-header">
             <h2>New Acronym</h2>
-            <form id="new-acronym-form">
-                <input type="text" id="acronym-input" placeholder="Acronym">
-                <input type="text" id="acronym-input" placeholder="Meaning">
-                <input type="text" id="acronym-input" placeholder="Description">
-                <!-- HTML multi select tags with search -->
-                <datalist id="acronym-tags">
-                    <option value="backend">Backend</option>
-                    <option value="business">Business</option>
-                    <option value="database">Database</option>
-                    <option value="design">Design</option>
-                    <option value="devops">DevOps</option>
-                </datalist>
+            <button class="btn btn-icon" aria-label="Close Acronym Details" onclick="closeAcronymModal()">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        <div class="modal-content">
+            <form action="" method="post" id="new-acronym-form">
 
-                <input type="text" id="acronym-input" placeholder="Related Acronyms">
+                <fieldset id="acronym-input-fieldset">
+                    <label for="acronym-input">Acronym</label>
+                    <input type="text" id="acronym-input" placeholder="Acronym">
+                </fieldset>
+                <fieldset id="acronym-meaning-fieldset">
+                    <label for="acronym-input">Meaning</label>
+                    <input type="text" id="acronym-input" placeholder="Meaning">
+                </fieldset>
+                <fieldset id="acronym-description-fieldset">
+                    <label for="acronym-input">Description</label>
+                    <textarea id="acronym-input" placeholder="Description"></textarea>
+                </fieldset>
+                <fieldset id="acronym-tags-fieldset">
+                    <label for="acronym-tags">Tags</label>
+                    <select id="acronym-tags" multiple>
+                        <option value="backend">Backend</option>
+                        <option value="business">Business</option>
+                        <option value="database">Database</option>
+                        <option value="design">Design</option>
+                        <option value="devops">DevOps</option>
+                    </select>
+                </fieldset>
+                <fieldset id="acronym-related-fieldset">
+                    <label for="acronym-input">Related Acronyms</label>
+                    <input type="text" id="acronym-input" placeholder="Related Acronyms">
+                </fieldset>
 
+                <fieldset><button class="btn btn-primary" type="submit">Create</button></fieldset>
             </form>
         </div>
     </div>
@@ -244,6 +266,37 @@
         function deleteAcronym(uuid) {
             console.log(uuid);
         }
+
+        function newAcronym() {
+            const newAcronymModal = document.getElementById('new-acronym-modal');
+            const modalOverlay = document.getElementById('modal-overlay');
+            newAcronymModal.dataset.visible = 'true';
+            newAcronymModal.dataset.hidden = 'false';
+            modalOverlay.dataset.visible = 'true';
+        }
+
+        function closeAcronymModal() {
+            const newAcronymModal = document.getElementById('new-acronym-modal');
+            const modalOverlay = document.getElementById('modal-overlay');
+            newAcronymModal.dataset.visible = 'false';
+            newAcronymModal.dataset.hidden = 'true';
+            modalOverlay.dataset.visible = 'false';
+        }
+
+        // Add event listener for mouse click on modal-overlay
+        document.addEventListener('click', function (event) {
+            if (event.target === document.getElementById('modal-overlay')) {
+                closeAcronymModal();
+            }
+        });
+
+        window.matchMedia('(prefers-color-scheme: dark)').addListener(function (event) {
+            if (event.matches) {
+                document.body.dataset.theme = 'dark';
+            } else {
+                document.body.dataset.theme = 'light';
+            }
+        });
     </script>
 
 </body>
