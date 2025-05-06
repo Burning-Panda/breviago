@@ -337,5 +337,9 @@ func getAcronym(c *gin.Context) {
 		return
 	}
 
+	// Set the browser to cache the acronym for 10 minutes
+	// TODO: Make this configurable
+	// TODO: Revalidate cache automatically when the acronym is updated
+	// c.Header("Cache-Control", "public, max-age=300")
 	c.HTML(http.StatusOK, "components/AcronymContent", gin.H{"Acronym": acronym, "Timezone": timezone})
 }
