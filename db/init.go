@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -118,6 +119,15 @@ func InitDB(db *gorm.DB) {
 				},
 				Grants: []Grant{
 				},
+				Revisions: []AcronymRevision{
+					{
+						UUID: uuid.New().String(),
+						UserID: adminUser.ID,
+						Action: "create",
+						OldValue: "Test old value",
+						NewValue: "Test new value",
+					},
+				},
 			}
 
 			if err := db.Create(&breviagoAcronym).Error; err != nil {
@@ -128,50 +138,6 @@ func InitDB(db *gorm.DB) {
 			fmt.Println("Created Breviago acronym")
 		} else {
 			fmt.Printf("failed to check for Breviago acronym: %v", err)
-			return
-		}
-	}
-
-	// Check if root folder exists
-	var rootFolder Folder
-	if err := db.Where("name = ?", "Root Folder").First(&rootFolder).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// Create root folder
-			rootFolder = Folder{
-				Name:        "Root Folder",
-				Description: "The root folder for Breviago",
-				Owner:       adminUser,
-			}
-
-			if err := db.Create(&rootFolder).Error; err != nil {
-				fmt.Printf("failed to create root folder: %v", err)
-				return
-			}
-			fmt.Println("Created root folder")
-		} else {
-			fmt.Printf("failed to check for root folder: %v", err)
-			return
-		}
-	}
-
-	// Check if root document exists
-	var rootDocument Document
-	if err := db.Where("name = ?", "Root Document").First(&rootDocument).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// Create root document
-			rootDocument = Document{
-				Name:       "Root Document",
-				Content:	"The root document for Breviago",
-				Owner:      adminUser,
-			}
-
-			if err := db.Create(&rootDocument).Error; err != nil {
-				fmt.Printf("failed to create root document: %v", err)
-				return
-			}
-			fmt.Println("Created root document")
-		} else {
-			fmt.Printf("failed to check for root document: %v", err)
 			return
 		}
 	}

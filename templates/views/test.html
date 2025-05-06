@@ -120,7 +120,8 @@
                     <div class="acronym-items">
                         {{ range .Acronyms }}
                         <div class="acronym-item" hx-get="/acronyms/{{ .UUID }}" hx-target="#acronym-details"
-                            hx-swap="innerHTML">
+                            hx-swap="innerHTML" hx-on:click="showAcronymDetails()" aria-role="button"
+                            aria-label="Toggle Acronym Details">
                             <div class="acronym-item-content">
                                 <div class="acronym-item-checkbox">
                                     <input type="checkbox">
@@ -150,7 +151,10 @@
                     </div>
                 </div>
 
-                <div id="acronym-details" class="acronym-details">
+                <div id="acronym-details-default" class="acronym-details" aria-hidden="false" data-visible="true">
+                    {{ template "components/AcronymListNoContent" . }}
+                </div>
+                <div id="acronym-details" class="acronym-details" aria-hidden="true" data-visible="false">
                     {{ template "components/AcronymContent" . }}
                 </div>
             </main>
@@ -215,6 +219,24 @@
             });
         });
 
+        function showAcronymDetails() {
+            const acronymDetails = document.getElementById('acronym-details');
+            const acronymDetailsEmpty = document.getElementById('acronym-details-default');
+            acronymDetails.dataset.visible = 'true';
+            acronymDetails.dataset.hidden = 'false';
+            acronymDetailsEmpty.dataset.visible = 'false';
+            acronymDetailsEmpty.dataset.hidden = 'true';
+        }
+
+        function hideAcronymDetails() {
+            const acronymDetails = document.getElementById('acronym-details');
+            const acronymDetailsEmpty = document.getElementById('acronym-details-default');
+            acronymDetails.dataset.visible = 'false';
+            acronymDetails.dataset.hidden = 'true';
+            acronymDetailsEmpty.dataset.visible = 'true';
+            acronymDetailsEmpty.dataset.hidden = 'false';
+        }
+
         function editAcronym(uuid) {
             console.log(uuid);
         }
@@ -233,16 +255,18 @@
 <div class="acronym-details-header">
     <h2 class="acronym-details-title">Acronym Details</h2>
     <div class="acronym-details-actions">
-        <button class="btn btn-icon">
+        <button class="btn btn-icon" aria-label="Share Acronym {{ .Acronym.Acronym }}">
             <i class="ph ph-share"></i>
         </button>
-        <button class="btn btn-icon" onclick="editAcronym('{{ .Acronym.UUID }}')">
+        <button class="btn btn-icon" aria-label="Edit Acronym {{ .Acronym.Acronym }}"
+            onclick="editAcronym('{{ .Acronym.UUID }}')">
             <i class="ph ph-pen"></i>
         </button>
-        <button class="btn btn-icon btn-danger" hx-delete="/acronyms/{{ .Acronym.UUID }}">
+        <button class="btn btn-icon btn-danger" aria-label="Delete Acronym {{ .Acronym.Acronym }}"
+            hx-delete="/acronyms/{{ .Acronym.UUID }}">
             <i class="ph ph-trash"></i>
         </button>
-        <button style="display: none;" aria-hidden="true" class="btn btn-icon">
+        <button class="btn btn-icon" aria-label="Close Acronym Details" onclick="hideAcronymDetails()">
             <i class="ph ph-x"></i>
         </button>
     </div>
@@ -311,9 +335,10 @@
     <div class="acronym-details-history">
         <h3 class="acronym-details-history-title">History</h3>
         <div class="acronym-details-history-list">
-            {{ range .Revisions }}
+            {{ range .Acronym.Revisions }}
             <div class="acronym-details-history-item">
-                <p class="acronym-details-history-item-text">{{ .Action }}</p>
+                <p class="acronym-details-history-item-text"><s>{{ .OldValue }}</s> {{ .NewValue }}</p>
+                <p class="acronym-details-history-item-text" aria-label="">{{ .Action }}</p>
             </div>
             {{ end }}
         </div>

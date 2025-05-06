@@ -99,10 +99,11 @@ type Acronym struct {
 	Labels      []Label   `gorm:"many2many:acronym_labels;"`
 	Notes       []Notes `gorm:"foreignKey:AcronymID" json:"notes"`
 	Grants      []Grant   `gorm:"foreignKey:AcronymID" json:"grants"`
+	Revisions   []AcronymRevision `gorm:"foreignKey:ForeignKeyID" json:"revisions"`
 
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	DeletedAt 	gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Label struct {
@@ -137,17 +138,15 @@ type Grant struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
-type Revision struct {
+type AcronymRevision struct {
 	ID             uint           `gorm:"primaryKey" json:"id"`
 	UUID           string         `gorm:"type:text" json:"uuid"`
 	ForeignKeyID   uint           `json:"foreign_key_id"`
-	ForeignKeyType string         `json:"foreign_key_type"`
 	UserID         uint           `json:"user_id"`
 	User           User           `gorm:"foreignKey:UserID" json:"user"`
 	Action         string         `json:"action"`
 	OldValue       string         `json:"old_value"`
 	NewValue       string         `json:"new_value"`
-	ChangeSummary  string         `json:"change_summary"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at"`
@@ -219,7 +218,6 @@ type Revisionable interface {
 
 // revisionCreateHelper creates a revision for any Revisionable model
 func revisionCreateHelper(tx *gorm.DB, model Revisionable, action string, userID uint) error {
-	typeName := model.GetTypeName()
 	id := model.GetID()
 
 	// Use reflection to create a pointer to the model type
@@ -227,18 +225,25 @@ func revisionCreateHelper(tx *gorm.DB, model Revisionable, action string, userID
 	if err := tx.Unscoped().First(oldValue, id).Error; err != nil {
 		return err
 	}
+
+	// Save only the changed columns
+	// Acronym
+	// Meaning
+	// Description
+	// OwnerID
+	
 	oldJSON, _ := json.Marshal(oldValue)
 	newJSON, _ := json.Marshal(model)
 
-	revision := Revision{
+
+
+	revision := AcronymRevision{
 		UUID:           uuid.New().String(),
 		ForeignKeyID:   id,
-		ForeignKeyType: typeName,
 		UserID:         userID,
 		Action:         action,
 		OldValue:       string(oldJSON),
 		NewValue:       string(newJSON),
-		ChangeSummary:  "",
 	}
 	return tx.Create(&revision).Error
 }
@@ -247,11 +252,21 @@ func revisionCreateHelper(tx *gorm.DB, model Revisionable, action string, userID
 func (a *Acronym) GetID() uint { return a.ID }
 func (a *Acronym) GetTypeName() string { return "Acronym" }
 func (a *Acronym) BeforeUpdate(tx *gorm.DB) error {
-	return revisionCreateHelper(tx, a, "update", 0) // Replace 0 with actual user ID if available
+	// Strip out the columns that is not necessary to save
+	changed := Acronym{
+		Acronym: a.Acronym,
+		Meaning: a.Meaning,
+		Description: a.Description,
+		OwnerID: a.OwnerID,
+	}
+	
+	return revisionCreateHelper(tx, &changed, "update", 1) // Replace 0 with actual user ID if available
 }
 
-
-
+/* func (a *Acronym) AfterCreate(tx *gorm.DB) error {
+	return revisionCreateHelper(tx, a, "create", 1) // Replace 0 with actual user ID if available
+}
+ */
 
 func GetGormDB() *gorm.DB {
 	if gormDB == nil {
@@ -270,7 +285,7 @@ func GetGormDB() *gorm.DB {
 			&OrganizationMember{},
 			&Acronym{},
 			&Label{},
-			&Revision{},
+			&AcronymRevision{},
 			&Notes{},
 			&Grant{},
 		)

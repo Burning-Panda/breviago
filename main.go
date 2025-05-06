@@ -269,7 +269,7 @@ func apiGetAcronym(c *gin.Context) {
 		return
 	}
 
-	revisions := database.Model(&db.Revision{}).Where("foreign_key_type = ?", "acronym").Where("foreign_key_id = ?", acronym.ID)
+	revisions := database.Model(&db.AcronymRevision{}).Where("foreign_key_type = ?", "acronym").Where("foreign_key_id = ?", acronym.ID)
 	fmt.Println(revisions)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -328,9 +328,9 @@ func getAcronym(c *gin.Context) {
 		Preload("Labels").
 		Preload("Notes").
 		Preload("Notes.User").
-		Preload("History").
 		Preload("Grants").
 		Preload("Owner").
+		Preload("Revisions").
 		Where("uuid = ?", uuid.String()).
 		First(&acronym).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})

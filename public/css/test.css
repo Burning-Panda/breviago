@@ -352,6 +352,10 @@ button:hover {
 	overflow-y: auto;
 }
 
+.acronym-details[data-visible="false"] {
+	display: none;
+}
+
 .acronym-details-header {
 	position: sticky;
 	top: 0;
@@ -660,6 +664,61 @@ button:hover {
 	font-size: 1em;
 	margin: 0;
 	white-space: pre-line;
+}
+
+.acronym-details-history-title {
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: var(--text-color);
+	margin-bottom: 0.5rem;
+}
+
+.acronym-details-history-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.acronym-details-history-item {
+	padding: 0.5rem;
+	border-radius: 0.375rem;
+	background-color: var(--nav-bg);
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: space-between;
+}
+
+.acronym-details-history-item-text {
+	font-size: 0.875rem;
+	color: var(--text-muted);
+}
+
+.acronym-details-history-item-text-old {
+	color: var(--danger-color);
+}
+
+.acronym-details-history-item-text-new {
+	color: var(--success-color);
+}
+
+s::before,
+s::after {
+	clip-path: inset(100%);
+	clip: rect(1px, 1px, 1px, 1px);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+s::before {
+	content: " [start of stricken text] ";
+}
+
+s::after {
+	content: " [end of stricken text] ";
 }
 
 /* Responsive */
