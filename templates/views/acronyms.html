@@ -399,51 +399,52 @@
         {{ template "components/AcronymListNoContent" . }}
         {{ end }}
     </div>
-    {{ end }}
+</div>
+{{ end }}
 
-    {{ define "components/AcronymListNoContent"}}
-    <div class="acronym-no-content">
-        <div class="acronym-no-content-box">
-            <h3 class="acronym-no-content-title">No acronym selected</h3>
-            <p class="acronym-no-content-description">Select an acronym from the list to view its details or create a
-                new one to get started.</p><button class="acronym-no-content-button">
-                <i class="ph ph-plus"></i>
-                Create new acronym</button>
-        </div>
+{{ define "components/AcronymListNoContent"}}
+<div class="acronym-no-content">
+    <div class="acronym-no-content-box">
+        <h3 class="acronym-no-content-title">No acronym selected</h3>
+        <p class="acronym-no-content-description">Select an acronym from the list to view its details or create a
+            new one to get started.</p><button class="acronym-no-content-button">
+            <i class="ph ph-plus"></i>
+            Create new acronym</button>
     </div>
-    {{ end }}
+</div>
+{{ end }}
 
-    {{ define "components/AcronymFolder"}}
-    <div class="sidebar-section">
-        <div class="sidebar-title">
-            <h3>Folders</h3>
-            <button class="btn btn-icon">
-                <i class="ph ph-folder-plus"></i>
-                <span>New Folder</span>
+{{ define "components/AcronymFolder"}}
+<div class="sidebar-section">
+    <div class="sidebar-title">
+        <h3>Folders</h3>
+        <button class="btn btn-icon">
+            <i class="ph ph-folder-plus"></i>
+            <span>New Folder</span>
+        </button>
+    </div>
+    <div class="folder-list">
+        <div class="sidebar-item">
+            <button class="btn">
+                <i class="ph ph-caret-down"></i>
             </button>
+            <i class="ph ph-folder sidebar-item-icon"></i>
+            <span>Technology</span>
         </div>
-        <div class="folder-list">
-            <div class="sidebar-item">
-                <button class="btn">
-                    <i class="ph ph-caret-down"></i>
-                </button>
-                <i class="ph ph-folder sidebar-item-icon"></i>
-                <span>Technology</span>
-            </div>
-            <div class="folder-subitem">
-                <div class="sidebar-item">
-                    <i class="ph ph-folder sidebar-item-icon"></i>
-                    <span>Programming</span>
-                </div>
-            </div>
+        <div class="folder-subitem">
             <div class="sidebar-item">
                 <i class="ph ph-folder sidebar-item-icon"></i>
-                <span>Business</span>
+                <span>Programming</span>
             </div>
-            <div class="sidebar-item">
-                <i class="ph ph-folder sidebar-item-icon"></i>
-                <span>Healthcare</span>
-            </div>
+        </div>
+        <div class="sidebar-item">
+            <i class="ph ph-folder sidebar-item-icon"></i>
+            <span>Business</span>
+        </div>
+        <div class="sidebar-item">
+            <i class="ph ph-folder sidebar-item-icon"></i>
+            <span>Healthcare</span>
         </div>
     </div>
-    {{ end }}
+</div>
+{{ end }}

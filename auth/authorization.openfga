@@ -14,38 +14,50 @@ type organization
     # Access to resources from child organizations
     define can_access_child_resources: member or admin or can_access_child_resources from parent
 
-# Groups allow you to organize users and organizational members
-type group
-  relations
-    define member: [user, organization#member]
-    define admin: [user, organization#admin]
-
-# Folders act as containers that might be owned by a user or organization
-type folder
+type acronym
   relations
     define owner: [user, organization]
-    define parent: [folder]
-    define granted: [user, organization, group]
-    define restricted: [user, organization, group]
-    define public: [user:*]
-    define can_create_file: owner or admin from owner
+    define label: [label]
+    define note: [notes]
+    define grant_viewer: [user, organization]
+    define grant_editor: [user, organization]
+    define grant_admin: [user, organization]
+    define can_read: owner or grant_viewer or grant_editor or grant_admin or can_access_child_resources from owner
+    define can_write: owner or grant_editor or grant_admin or admin from owner
+    define can_delete: owner or grant_admin or admin from owner
     define can_manage: owner or admin from owner
-    define viewer: [user, user:*, group#member, organization#member] or owner or viewer from parent or public
-    define can_read: viewer or owner or viewer from parent or can_access_child_resources from owner
-    define can_write: owner or admin from owner or can_access_child_resources from owner
-    define can_share: owner or admin from owner
 
-# Documents represent content within folders
-type document
+type label
   relations
     define owner: [user, organization]
-    define parent: [folder]
-    define granted: [user, organization, group]
-    define restricted: [user, organization, group]
-    define public: [user:*]
+    define acronym: [acronym]
     define can_manage: owner or admin from owner
-    define viewer: [user, user:*, group#member, organization#member] or owner or viewer from parent or public
-    define can_read: viewer or owner or viewer from parent or can_access_child_resources from owner
-    define can_write: owner or admin from owner or can_access_child_resources from owner
-    define can_share: owner or admin from owner
 
+type notes
+  relations
+    define owner: [user]
+    define acronym: [acronym]
+    define can_manage: owner
+
+type grant
+  relations
+    define acronym: [acronym]
+    define viewer: [user, organization]
+    define editor: [user, organization]
+    define admin: [user, organization]
+
+type organizationmember
+  relations
+    define user: [user]
+    define organization: [organization]
+    define is_admin: [user]
+    define can_manage: is_admin
+
+type user
+  relations
+    define organization: [organization#member]
+    define is_admin: [organization#admin]
+    define can_manage: is_admin
+    define can_read: organization or can_access_child_resources from organization
+    define can_write: organization or can_access_child_resources from organization
+    define can_delete: organization or can_access_child_resources from organization

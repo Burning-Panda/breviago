@@ -71,7 +71,7 @@ func main() {
 
 	// Create a Template and parse files in order:
 	tmpl := template.New("")
-	
+
 	// Add functions to the template
 	tmpl.Funcs(template.FuncMap{
 		"getCurrentYear": func() int {
@@ -254,7 +254,6 @@ func apiGetAcronym(c *gin.Context) {
 		return
 	}
 
-
 	var acronym db.Acronym
 	if err := database.
 		Preload("Related").
@@ -273,7 +272,7 @@ func apiGetAcronym(c *gin.Context) {
 	fmt.Println(revisions)
 
 	c.JSON(http.StatusOK, gin.H{
-		"acronym": acronym,
+		"acronym":   acronym,
 		"revisions": revisions,
 	})
 }
@@ -302,12 +301,12 @@ func getAcronyms(c *gin.Context) {
 		Preload("Labels").
 		Preload("Related").
 		Find(&acronyms).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
-			return
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
+		return
 	}
 
 	c.HTML(http.StatusOK, "views/acronyms", gin.H{
-		"Title": "Acronyms",
+		"Title":    "Acronyms",
 		"Acronyms": acronyms,
 		"Timezone": timezone,
 	})
@@ -321,7 +320,7 @@ func getAcronym(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
 		return
 	}
-	
+
 	var acronym db.Acronym
 	if err := database.
 		Preload("Related").
