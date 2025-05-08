@@ -1,0 +1,30 @@
+{{ define "components/AcronymItemOld"}}
+<div class="acronym-item" hx-get="/acronyms/{{ .UUID }}" hx-target="#acronym-details"
+    hx-swap="innerHTML" hx-on:click="showAcronymDetails()" aria-role="button"
+    aria-label="Toggle Acronym Details">
+    <div class="acronym-item-content">
+        <div class="acronym-item-checkbox">
+            <input type="checkbox">
+        </div>
+        <div class="acronym-item-main">
+            <div class="acronym-item-header">
+                <h3 class="acronym-item-title">{{ .Acronym }}</h3>
+                <button class="btn btn-icon acronym-item-actions">
+                    <i class="ph ph-dots-three-outline-horizontal"></i>
+                </button>
+            </div>
+            <p class="acronym-item-description">{{ .Meaning }}</p>
+            <p class="acronym-item-description">{{ .Description }}</p>
+            <div class="acronym-item-tags">
+                {{ range .Labels }}
+                <span class="acronym-tag">{{ .Label }}</span>
+                {{ end }}
+                <time class="acronym-item-date"
+                    datetime='{{ .UpdatedAt.Format "2006-01-02T15:04:05Z07:00" }}'>
+                    {{ .UpdatedAt.Format "Jan 2, 2006" }}
+                </time>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

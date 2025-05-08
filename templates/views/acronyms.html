@@ -8,6 +8,7 @@
     <title>{{ .Title }} - {{ .GetAppName }}</title>
     <link rel="stylesheet" href="/public/css/reset.css">
     <link rel="stylesheet" href="/public/css/test.css">
+    <link rel="stylesheet" href="/public/css/main.css">
 </head>
 
 <body data-theme="dark">
@@ -66,10 +67,10 @@
         <div class="main-content">
             <aside class="sidebar">
                 <div class="sidebar-content">
-                    <button class="sidebar-item">
+                    <a href="/acronyms" class="sidebar-item">
                         <i class="ph ph-house sidebar-item-icon"></i>
                         <span>All Acronyms</span>
-                    </button>
+                    </a>
                     <div class="sidebar-section">
                         <div class="sidebar-title">
                             <div class="sidebar-item">
@@ -119,39 +120,12 @@
                     </div>
                     <div class="acronym-items">
                         {{ range .Acronyms }}
-                        <div class="acronym-item" hx-get="/acronyms/{{ .UUID }}" hx-target="#acronym-details"
-                            hx-swap="innerHTML" hx-on:click="showAcronymDetails()" aria-role="button"
-                            aria-label="Toggle Acronym Details">
-                            <div class="acronym-item-content">
-                                <div class="acronym-item-checkbox">
-                                    <input type="checkbox">
-                                </div>
-                                <div class="acronym-item-main">
-                                    <div class="acronym-item-header">
-                                        <h3 class="acronym-item-title">{{ .Acronym }}</h3>
-                                        <button class="btn btn-icon acronym-item-actions">
-                                            <i class="ph ph-dots-three-outline-horizontal"></i>
-                                        </button>
-                                    </div>
-                                    <p class="acronym-item-description">{{ .Meaning }}</p>
-                                    <p class="acronym-item-description">{{ .Description }}</p>
-                                    <div class="acronym-item-tags">
-                                        {{ range .Labels }}
-                                        <span class="acronym-tag">{{ .Label }}</span>
-                                        {{ end }}
-                                        <time class="acronym-item-date"
-                                            datetime='{{ .UpdatedAt.Format "2006-01-02T15:04:05Z07:00" }}'>
-                                            {{ .UpdatedAt.Format "Jan 2, 2006" }}
-                                        </time>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        {{ template "components/AcronymItem" . }}
                         {{ end }}
                     </div>
                 </div>
 
-                <div id="acronym-details-default" class="acronym-details" aria-hidden="false" data-visible="true">
+                <div id="acronym-details-default" class="acronym-details" aria-hidden="false">
                     {{ template "components/AcronymListNoContent" . }}
                 </div>
                 <div id="acronym-details" class="acronym-details" aria-hidden="true" data-visible="false">
@@ -205,6 +179,22 @@
         </div>
     </div>
 
+    <!-- The Delete Modal -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close">&times;</span>
+            <h2>Delete Acronym</h2>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this acronym?</p>
+            <p>This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="submit">Delete</button>
+            <button class="btn btn-secondary" type="button">Cancel</button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 
     <link rel="stylesheet" type="text/css"
@@ -244,23 +234,50 @@
         function showAcronymDetails() {
             const acronymDetails = document.getElementById('acronym-details');
             const acronymDetailsEmpty = document.getElementById('acronym-details-default');
-            acronymDetails.dataset.visible = 'true';
-            acronymDetails.dataset.hidden = 'false';
-            acronymDetailsEmpty.dataset.visible = 'false';
-            acronymDetailsEmpty.dataset.hidden = 'true';
+            acronymDetails.setAttribute('aria-hidden', 'false');
+            acronymDetailsEmpty.setAttribute('aria-hidden', 'true');
         }
 
         function hideAcronymDetails() {
             const acronymDetails = document.getElementById('acronym-details');
             const acronymDetailsEmpty = document.getElementById('acronym-details-default');
-            acronymDetails.dataset.visible = 'false';
-            acronymDetails.dataset.hidden = 'true';
-            acronymDetailsEmpty.dataset.visible = 'true';
-            acronymDetailsEmpty.dataset.hidden = 'false';
+            acronymDetails.setAttribute('aria-hidden', 'true');
+            acronymDetailsEmpty.setAttribute('aria-hidden', 'false');
         }
 
         function editAcronym(uuid) {
-            console.log(uuid);
+            const content = document.querySelector('.acronym-details-content');
+            const editableFields = content.querySelectorAll('[data-editable]');
+
+            // Toggle edit mode
+            const isEditing = content.dataset.editing === 'true';
+            content.dataset.editing = !isEditing;
+
+            editableFields.forEach(field => {
+                if (!isEditing) {
+                    // Enter edit mode
+                    const originalContent = field.textContent;
+                    field.innerHTML = `<input type="text" class="edit-input" value="${originalContent}" data-original="${originalContent}">`;
+                } else {
+                    // Save changes
+                    const input = field.querySelector('input');
+                    if (input) {
+                        const newValue = input.value;
+                        field.textContent = newValue;
+
+                        // Send update to server
+                        fetch(`/acronyms/${uuid}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                [field.dataset.field]: newValue
+                            })
+                        });
+                    }
+                }
+            });
         }
 
         function deleteAcronym(uuid) {
@@ -328,12 +345,13 @@
     {{ if .Acronym }}
     <div class="acronym-details-main">
         <div class="acronym-details-header-content">
-            <h2 class="acronym-details-name">{{ .Acronym.Acronym }}</h2>
+            <h2 class="acronym-details-name" data-editable="true" data-field="acronym">{{ .Acronym.Acronym }}</h2>
         </div>
-        <h3 class="acronym-details-full-name">{{ .Acronym.Meaning }}</h3>
+        <h3 class="acronym-details-full-name" data-editable="true" data-field="meaning">{{ .Acronym.Meaning }}</h3>
         <div class="acronym-details-description">
             <h3 class="acronym-details-description-title">Description</h3>
-            <p class="acronym-details-description-text">{{ .Acronym.Description }}</p>
+            <p class="acronym-details-description-text" data-editable="true" data-field="description">{{
+                .Acronym.Description }}</p>
         </div>
         {{ if .Acronym.Labels }}
         <div class="acronym-details-tags">
@@ -407,44 +425,9 @@
     <div class="acronym-no-content-box">
         <h3 class="acronym-no-content-title">No acronym selected</h3>
         <p class="acronym-no-content-description">Select an acronym from the list to view its details or create a
-            new one to get started.</p><button class="acronym-no-content-button">
+            new one to get started.</p><button class="acronym-no-content-button" type="button" onclick="newAcronym()">
             <i class="ph ph-plus"></i>
             Create new acronym</button>
-    </div>
-</div>
-{{ end }}
-
-{{ define "components/AcronymFolder"}}
-<div class="sidebar-section">
-    <div class="sidebar-title">
-        <h3>Folders</h3>
-        <button class="btn btn-icon">
-            <i class="ph ph-folder-plus"></i>
-            <span>New Folder</span>
-        </button>
-    </div>
-    <div class="folder-list">
-        <div class="sidebar-item">
-            <button class="btn">
-                <i class="ph ph-caret-down"></i>
-            </button>
-            <i class="ph ph-folder sidebar-item-icon"></i>
-            <span>Technology</span>
-        </div>
-        <div class="folder-subitem">
-            <div class="sidebar-item">
-                <i class="ph ph-folder sidebar-item-icon"></i>
-                <span>Programming</span>
-            </div>
-        </div>
-        <div class="sidebar-item">
-            <i class="ph ph-folder sidebar-item-icon"></i>
-            <span>Business</span>
-        </div>
-        <div class="sidebar-item">
-            <i class="ph ph-folder sidebar-item-icon"></i>
-            <span>Healthcare</span>
-        </div>
     </div>
 </div>
 {{ end }}

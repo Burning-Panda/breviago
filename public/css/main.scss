@@ -1,0 +1,97 @@
+.acronym {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: var(--nav-bg);
+    }
+
+    &__content {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    &__checkbox {
+        margin-top: 0.125rem;
+    }
+
+    &__meaning {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+
+        h3 {
+            font-size: 1.125rem;
+            margin: 0;
+            font-weight: normal;
+        }
+    }
+
+    &__meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    &__tags {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    &__tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        background-color: var(--primary-light);
+        color: var(--nav-bg);
+        opacity: 0.9;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: var(--primary-color);
+        }
+    }
+
+    p {
+        margin: 0;
+    }
+}
+
+
+/* ######################################################### */
+/* ################### DELETE MODAL ######################## */
+/* ######################################################### */
+
+._modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}

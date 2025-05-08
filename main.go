@@ -105,7 +105,8 @@ func main() {
 	//tmpl = template.Must(tmpl.ParseGlob("templates/components/*.html"))
 	// parse all views (they only define blocks)
 	tmpl = template.Must(tmpl.ParseGlob("templates/views/*.html"))
-
+	tmpl = template.Must(tmpl.ParseGlob("templates/components/*.html"))
+	
 	// Tell Gin to use this template
 	r.SetHTMLTemplate(tmpl)
 

@@ -1,0 +1,7 @@
+{{ define "components/AcronymList" }}
+<div class="acronym-list">
+    {{ range .Acronyms }}
+    {{ template "components/AcronymItem" . }}
+    {{ end }}
+</div>
+{{ end }}
