@@ -1,16 +1,16 @@
-# Brevido
+# Breviago
 
-Brevido is a web API designed to handle a personal easily searchable list of acronyms that can be shared with others.
+Breviago is a web API designed to handle a personal easily searchable list of acronyms that can be shared with others.
 This API provides endpoints to create, read, update, and delete acronyms, as well as a admin panel to manage user and organization data.
 It is built exclusively as an API service to support seamless integration with front-end applications or other services.
 
 ## Philosophy
 
-Brevido is designed to be a simple, easy-to-use, and secure acronym management system.
+Breviago is designed to be a simple, easy-to-use, and secure acronym management system.
 
 ## Overview
 
-The Brevido API serves as a centralized service to:
+The Breviago API serves as a centralized service to:
 - Store and manage acronyms.
 - Associate acronyms with users and organizations.
 - Provide secure, authenticated access to data.
@@ -47,7 +47,12 @@ The Brevido API serves as a centralized service to:
 - [x] **Acronym Module**
   - [x] Implement CRUD endpoints for acronyms.
   - [ ] Add search and filter functionality.
-  
+
+- [ ] **Frontend**
+  - [ ] Implement a simple frontend to test the API.
+  - [ ] Select a frontend framework.
+  - [ ] Create a modern UI for viewing, editing, and managing acronyms.
+
 - [ ] **User Module**
   - [ ] Create user registration endpoint.
   - [ ] Implement authentication & authorization.
@@ -77,6 +82,7 @@ The Brevido API serves as a centralized service to:
 
 - Go 1.24+
 - Docker (optional, for containerization)
+- openFGA
 - Git (optional, for cloning the repository)
 - Air (optional, for development)
 
@@ -93,12 +99,18 @@ The Brevido API serves as a centralized service to:
    go build -o acronyms-system-api
    ```
 
-3. **Run the Project:**
+3. **Install OpenFga and run it**
+  ```bash
+  brew install openfga
+  openfga run --playground-port=8079 --grpc-addr="0.0.0.0:8078"
+  ```
+
+4. **Run the Project:**
    ```bash
    ./acronyms-system-api
    ```
 
-4. **Access the Admin Panel:**
+5. **Access the Admin Panel:**
    ```bash
    http://localhost:8080/admin
    ```
@@ -116,6 +128,5 @@ With or without Go "Air"
    ```bash
    air
    ```
-
 
 

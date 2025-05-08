@@ -92,3 +92,7 @@ fabric.properties
 # Ignore all local history of files
 .history
 .ionide
+
+### Cursor ###
+.cursorrules
+.cursor
