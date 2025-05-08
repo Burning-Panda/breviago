@@ -95,8 +95,8 @@ type Acronym struct {
 	OwnerID     uint      `json:"owner_id"`
 	
 	Owner       User      `gorm:"foreignKey:OwnerID" json:"owner"`
-	Related     []Acronym `gorm:"many2many:acronym_relations;"`
-	Labels      []Label   `gorm:"many2many:acronym_labels;"`
+	Related     []Acronym `gorm:"many2many:acronym_relations;" json:"related"`
+	Labels      []Label   `gorm:"many2many:acronym_labels;" json:"labels"`
 	Notes       []Notes `gorm:"foreignKey:AcronymID" json:"notes"`
 	Grants      []Grant   `gorm:"foreignKey:AcronymID" json:"grants"`
 	Revisions   []AcronymRevision `gorm:"foreignKey:ForeignKeyID" json:"revisions"`
