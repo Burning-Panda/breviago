@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
@@ -39,40 +40,6 @@ func GetDB() *sql.DB {
 	return database
 }
 
-type Acronym struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	ShortForm   string `json:"short_form"`
-	LongForm    string `json:"long_form"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
-
-type AcronymCategory struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	AcronymID   int `json:"acronym_id"`
-	CategoryID  int `json:"category_id"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
-// 
-
-type Category struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-type Label struct {
-	ID          int    `json:"id"`
-	UUID        uuid.UUID `json:"uuid"`
-	Label       string `json:"label"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
 
 // initSchema creates the necessary tables if they don't exist
 func initSchema() {
@@ -115,15 +82,15 @@ func InsertAcronym(acronym *Acronym) error {
 	database := GetDB()
 	
 	// Generate a new UUID if not provided
-	if acronym.UUID == uuid.Nil {
-		acronym.UUID = uuid.New()
+	if acronym.UUID == "" {
+		acronym.UUID = uuid.New().String()
 	}
 	
 	res, err := database.Exec(
-		"INSERT INTO acronyms (uuid, short_form, long_form, description) VALUES (?, ?, ?, ?)",
+		"INSERT INTO acronyms (uuid, acronym, meaning, description) VALUES (?, ?, ?, ?)",
 		acronym.UUID,
-		acronym.ShortForm,
-		acronym.LongForm,
+		acronym.Acronym,
+		acronym.Meaning,
 		acronym.Description,
 	)
 	if err != nil {
@@ -136,13 +103,13 @@ func InsertAcronym(acronym *Acronym) error {
 	}
 
 	return database.QueryRow(
-		"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE id = ?", 
+		"SELECT id, uuid, acronym, meaning, description, created_at, updated_at FROM acronyms WHERE id = ?", 
 		id,
 	).Scan(
 		&acronym.ID,
 		&acronym.UUID,
-		&acronym.ShortForm,
-		&acronym.LongForm,
+		&acronym.Acronym,
+		&acronym.Meaning,
 		&acronym.Description,
 		&acronym.CreatedAt,
 		&acronym.UpdatedAt,
@@ -162,7 +129,7 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 
 	// Prepare the insert statement
 	stmt, err := tx.Prepare(
-		"INSERT INTO acronyms (uuid, short_form, long_form, description) VALUES (?, ?, ?, ?)",
+		"INSERT INTO acronyms (uuid, acronym, meaning, description) VALUES (?, ?, ?, ?)",
 	)
 	if err != nil {
 		return nil, err
@@ -172,14 +139,14 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 	// Insert each acronym
 	for i := range acronyms {
 		// Generate a new UUID if not provided
-		if acronyms[i].UUID == uuid.Nil {
-			acronyms[i].UUID = uuid.New()
+		if acronyms[i].UUID == "" {
+			acronyms[i].UUID = uuid.New().String()
 		}
 
 		res, err := stmt.Exec(
 			acronyms[i].UUID,
-			acronyms[i].ShortForm,
-			acronyms[i].LongForm,
+			acronyms[i].Acronym,
+			acronyms[i].Meaning,
 			acronyms[i].Description,
 		)
 		if err != nil {
@@ -193,13 +160,13 @@ func InsertAcronyms(acronyms []Acronym) ([]Acronym, error) {
 
 		// Update the acronym with the new ID and timestamps
 		err = tx.QueryRow(
-			"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE id = ?",
+			"SELECT id, uuid, acronym, meaning, description, created_at, updated_at FROM acronyms WHERE id = ?",
 			id,
 		).Scan(
 			&acronyms[i].ID,
 			&acronyms[i].UUID,
-			&acronyms[i].ShortForm,
-			&acronyms[i].LongForm,
+			&acronyms[i].Acronym,
+			&acronyms[i].Meaning,
 			&acronyms[i].Description,
 			&acronyms[i].CreatedAt,
 			&acronyms[i].UpdatedAt,
@@ -221,7 +188,7 @@ func SearchAcronyms(query string) ([]Acronym, error) {
 	database := GetDB()
 
 	rows, err := database.Query(
-		"SELECT id, uuid, short_form, long_form, description, created_at, updated_at FROM acronyms WHERE short_form LIKE ? OR long_form LIKE ? OR description LIKE ?",
+		"SELECT id, uuid, acronym, meaning, description, created_at, updated_at FROM acronyms WHERE acronym LIKE ? OR meaning LIKE ? OR description LIKE ?",
 		fmt.Sprintf("%%%s%%", query),
 		fmt.Sprintf("%%%s%%", query),
 		fmt.Sprintf("%%%s%%", query),
@@ -238,8 +205,8 @@ func SearchAcronyms(query string) ([]Acronym, error) {
 		err := rows.Scan(
 			&acronym.ID,
 			&acronym.UUID,
-			&acronym.ShortForm,
-			&acronym.LongForm,
+			&acronym.Acronym,
+			&acronym.Meaning,
 			&acronym.Description,
 			&acronym.CreatedAt,
 			&acronym.UpdatedAt,
@@ -252,3 +219,10 @@ func SearchAcronyms(query string) ([]Acronym, error) {
 
 	return acronyms, nil
 }
+
+// Function to delete all deleted records after a given number of days
+func DeleteDeletedRecordsAfter(database *sql.DB, days int) error {
+	_, err := database.Exec("DELETE FROM acronyms WHERE deleted_at > ?", time.Now().AddDate(0, 0, -days))
+	return err
+}
+
