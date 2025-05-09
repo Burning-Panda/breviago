@@ -65,6 +65,13 @@ func main() {
 	api.PUT("/acronyms/:id", updateAcronym)
 	api.DELETE("/acronyms/:id", deleteAcronym)
 
+	// User API
+	user := api.Group("/user")
+	user.GET("/", getUser)
+	user.POST("/", createUser)
+	user.PUT("/:id", updateUser)
+	user.DELETE("/:id", deleteUser)
+
 	r.Run(":8080")
 }
 
@@ -94,7 +101,10 @@ func getAcronyms(c *gin.Context) {
 	if err := database.
 		Preload("Owner").
 		Preload("Labels").
-		Find(&acronyms).Error; err != nil {
+		Where(&db.Acronym{Visibility: db.VisibilityPrivate}).
+		Where(&db.Acronym{OwnerID: 1}).
+		Find(&acronyms).
+		Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
 		return
 	}
@@ -156,6 +166,37 @@ func deleteAcronym(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
+
+
+
+/* User API */
+
+func getUser(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+	})
+}
+
+func createUser(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+	})
+}
+
+func updateUser(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+	})
+}
+
+func deleteUser(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+	})
+}
+
+
+
 
 
 
