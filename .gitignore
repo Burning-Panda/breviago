@@ -22,6 +22,8 @@
 *.out
 go.work
 /tmp/*
+**/tmp/*
+
 
 ### Database ###
 *.db
