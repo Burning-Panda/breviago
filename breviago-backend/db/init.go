@@ -117,7 +117,7 @@ func InitDB(db *gorm.DB) {
 				Notes: []Notes{
 					{Note: "breviago is a application for remembering abbreviations", User: adminUser},
 				},
-				Grants: []Grant{
+				Grants: []AcronymGrant{
 				},
 				Revisions: []AcronymRevision{
 					{

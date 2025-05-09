@@ -86,6 +86,16 @@ type OrganizationMember struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
+// VisibilityType defines who can see an acronym
+type VisibilityType string
+
+const (
+	VisibilityPrivate    VisibilityType = "private"     // Only visible to owner
+	VisibilityPublic     VisibilityType = "public"      // Visible to everyone
+	VisibilityOrganization VisibilityType = "organization" // Visible to specific organization
+	VisibilityUser       VisibilityType = "user"        // Visible to specific user
+)
+
 type Acronym struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
 	UUID        string    `gorm:"type:uuid;unique;index" json:"uuid"`
@@ -93,12 +103,13 @@ type Acronym struct {
 	Meaning     string    `json:"meaning"`
 	Description string    `json:"description"`
 	OwnerID     uint      `json:"owner_id"`
+	Visibility  VisibilityType `gorm:"type:text;default:'private'" json:"visibility"`
 	
 	Owner       User      `gorm:"foreignKey:OwnerID" json:"owner"`
 	Related     []Acronym `gorm:"many2many:acronym_relations;" json:"related"`
 	Labels      []Label   `gorm:"many2many:acronym_labels;" json:"labels"`
 	Notes       []Notes `gorm:"foreignKey:AcronymID" json:"notes"`
-	Grants      []Grant   `gorm:"foreignKey:AcronymID" json:"grants"`
+	Grants      []AcronymGrant   `gorm:"foreignKey:AcronymID" json:"grants"`
 	Revisions   []AcronymRevision `gorm:"foreignKey:ForeignKeyID" json:"revisions"`
 
 	CreatedAt   time.Time `json:"created_at"`
@@ -127,7 +138,7 @@ type Notes struct {
 	User      User      `gorm:"foreignKey:UserID" json:"user"`
 }
 
-type Grant struct {
+type AcronymGrant struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UUID      string    `gorm:"type:text" json:"uuid"`
 	AcronymID uint      `json:"acronym_id"`
@@ -175,7 +186,7 @@ func (om *OrganizationMember) SetUUID(uuid string) { om.UUID = uuid }
 func (a *Acronym) SetUUID(uuid string) { a.UUID = uuid }
 func (l *Label) SetUUID(uuid string) { l.UUID = uuid }
 func (ac *Notes) SetUUID(uuid string) { ac.UUID = uuid }
-func (ag *Grant) SetUUID(uuid string) { ag.UUID = uuid }
+func (ag *AcronymGrant) SetUUID(uuid string) { ag.UUID = uuid }
 
 // BeforeCreate hooks using the generic GenerateUUID function
 func (u *User) BeforeCreate(tx *gorm.DB) error {
@@ -202,7 +213,7 @@ func (ac *Notes) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, ac)
 }
 
-func (ag *Grant) BeforeCreate(tx *gorm.DB) error {
+func (ag *AcronymGrant) BeforeCreate(tx *gorm.DB) error {
 	return GenerateUUID(tx, ag)
 }
 
@@ -287,7 +298,7 @@ func GetGormDB() *gorm.DB {
 			&Label{},
 			&AcronymRevision{},
 			&Notes{},
-			&Grant{},
+			&AcronymGrant{},
 		)
 		if err != nil {
 			log.Fatal("Failed to migrate database:", err)
