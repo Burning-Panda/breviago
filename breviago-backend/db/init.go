@@ -48,6 +48,13 @@ func InitDB(db *gorm.DB) {
 				fmt.Printf("failed to update admin user UUID: %v", err)
 				return
 			}
+
+			db.Create(&User{
+				Name:  "admin2",
+				LegalName: "Administrator2",
+				Password:  string(hashedPassword),
+				Email:     "admin2@breviago.com",
+			})
 			fmt.Println("Created default admin user")
 		} else {
 			fmt.Printf("failed to check for admin user: %v", err)
@@ -89,6 +96,19 @@ func InitDB(db *gorm.DB) {
 		}
 	}
 
+	// Add Admin to Root Organization
+	orgMember := OrganizationMember{
+		OrganizationID: rootOrg.ID,
+		UserID:        adminUser.ID,
+		IsAdmin:       true,
+	}
+
+	if err := db.Create(&orgMember).Error; err != nil {
+		fmt.Printf("failed to add admin to root organization: %v", err)
+		return
+	}
+	fmt.Println("Added admin to root organization")
+
 	// Check if Breviago acronym exists
 	var breviagoAcronym Acronym
 	if err := db.Where("acronym = ?", "breviago").First(&breviagoAcronym).Error; err != nil {
@@ -107,6 +127,13 @@ func InitDB(db *gorm.DB) {
 						Meaning:     "Relation Breviago",
 						Description: "Is a relation of breviago is a application for remembering abbreviations",
 						Owner:       adminUser,
+					},
+					{
+						UUID:        "00000000-0000-0000-0000-000000000002",
+						Acronym:     "PB",
+						Meaning:     "Partner Breviago",
+						Description: "Is a partner of breviago",
+						OwnerID:     2,
 					},
 				},
 				Labels: []Label{

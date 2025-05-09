@@ -17,7 +17,7 @@ var (
 )
 
 type Session struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
+	ID        uint      `gorm:"primaryKey"`
 	UserID    uint      `json:"user_id"`
 	Token     string    `gorm:"unique;index" json:"token"`
 	CreatedAt time.Time `json:"created_at"`
@@ -25,7 +25,7 @@ type Session struct {
 }
 
 type User struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
+	ID        uint      `gorm:"primaryKey"`
 	UUID      string    `gorm:"type:text;unique;index" json:"uuid"`
 	Name      string    `gorm:"unique" json:"name"`
 	LegalName string    `gorm:"unique" json:"legal_name"`
@@ -48,7 +48,7 @@ type UserSettings struct {
 }
 
 type AuditLog struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
+	ID        uint      `gorm:"primaryKey"`
 	UserID    uint      `json:"user_id"`
 	User      User      `gorm:"foreignKey:UserID" json:"user"`
 
@@ -66,7 +66,7 @@ type Organization struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 
-	Members     []OrganizationMember `gorm:"foreignKey:OrganizationID" json:"members"`
+	Members     []OrganizationMember
 
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -74,16 +74,18 @@ type Organization struct {
 }
 
 type OrganizationMember struct {
-	ID             uint      `gorm:"primaryKey" json:"id"`
-	UUID           string    `gorm:"type:text" json:"uuid"`
-	OrganizationID uint      `json:"organization_id"`
-	IsAdmin        bool      `json:"is_admin"`
+	ID             	uint      `gorm:"primaryKey"`
+	UUID           	string    `gorm:"type:text" json:"uuid"`
+	IsAdmin        	bool      `json:"is_admin"`
 
-	UserID         uint      `json:"user_id"`
-	User           User      `gorm:"foreignKey:UserID" json:"user"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	UserID         	uint      	`gorm:"uniqueIndex:idx_org_user" json:"user_id"`
+	User           	User      	`gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user"`
+	OrganizationID 	uint      	`gorm:"uniqueIndex:idx_org_user" json:"organization_id"`
+	Organization   	Organization `gorm:"foreignKey:OrganizationID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"organization"`
+
+	CreatedAt      	time.Time 	`json:"created_at"`
+	UpdatedAt      	time.Time 	`json:"updated_at"`
+	DeletedAt		gorm.DeletedAt 	`gorm:"index" json:"deleted_at"`
 }
 
 // VisibilityType defines who can see an acronym
@@ -285,6 +287,7 @@ func GetGormDB() *gorm.DB {
 		gormDB, err = gorm.Open(sqlite.Open("acronyms.db"), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Info),
 		})
+
 		if err != nil {
 			log.Fatal("Failed to connect to database:", err)
 		}
@@ -295,10 +298,12 @@ func GetGormDB() *gorm.DB {
 			&Organization{},
 			&OrganizationMember{},
 			&Acronym{},
+			&AcronymGrant{},
 			&Label{},
 			&AcronymRevision{},
 			&Notes{},
-			&AcronymGrant{},
+			&Session{},
+			&UserSettings{},
 		)
 		if err != nil {
 			log.Fatal("Failed to migrate database:", err)
