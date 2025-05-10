@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Burning-Panda/acronyms-vault/db"
+	"github.com/Burning-Panda/breviago/db"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -48,11 +48,9 @@ func main() {
 	r := gin.Default()
 
 	// Middleware
-	r.Use(func(ctx *gin.Context) {
-		// TODO: Add Authentication middleware here
-		ctx.Next()
-	})
+	r.Use(AuthenticationMiddleware(database))
 
+	// Routes
 	r.GET("/", getDefault)
 
 	api := r.Group("/api")
@@ -66,9 +64,11 @@ func main() {
 	api.DELETE("/acronyms/:id", deleteAcronym)
 
 	// User API
-	user := api.Group("/user")
+	user := api.Group("/users")
 	user.GET("/", getUser)
 	user.POST("/", createUser)
+	user.GET("/me", getMe)
+	user.GET("/:id", getUser)
 	user.PUT("/:id", updateUser)
 	user.DELETE("/:id", deleteUser)
 
@@ -174,6 +174,19 @@ func deleteAcronym(c *gin.Context) {
 func getUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
+	})
+}
+
+func getMe(c *gin.Context) {
+	user, ok := c.Get("user")
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found in context"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+		"user": user,
 	})
 }
 

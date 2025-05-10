@@ -96,19 +96,6 @@ func InitDB(db *gorm.DB) {
 		}
 	}
 
-	// Add Admin to Root Organization
-	orgMember := OrganizationMember{
-		OrganizationID: rootOrg.ID,
-		UserID:        adminUser.ID,
-		IsAdmin:       true,
-	}
-
-	if err := db.Create(&orgMember).Error; err != nil {
-		fmt.Printf("failed to add admin to root organization: %v", err)
-		return
-	}
-	fmt.Println("Added admin to root organization")
-
 	// Check if Breviago acronym exists
 	var breviagoAcronym Acronym
 	if err := db.Where("acronym = ?", "breviago").First(&breviagoAcronym).Error; err != nil {

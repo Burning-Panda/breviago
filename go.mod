@@ -1,4 +1,4 @@
-module github.com/Burning-Panda/acronyms-vault
+module github.com/Burning-Panda/breviago
 
 go 1.23.2
 
