@@ -25,15 +25,15 @@ type Session struct {
 }
 
 type User struct {
-	ID        uint      `gorm:"primaryKey"`
-	UUID      string    `gorm:"type:text;unique;index" json:"uuid"`
-	Name      string    `gorm:"unique" json:"name"`
-	LegalName string    `gorm:"unique" json:"legal_name"`
-	Email     string    `gorm:"unique" json:"email"`
-	Password  string    `json:"password"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Session   Session   `gorm:"foreignKey:UserID"`
+	ID        uint           `gorm:"primaryKey"`
+	UUID      string         `gorm:"type:text;unique;index" json:"uuid"`
+	Name      string         `gorm:"unique" json:"name"`
+	LegalName string         `gorm:"unique" json:"legal_name"`
+	Email     string         `gorm:"unique" json:"email"`
+	Password  string         `gorm:"default:''"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	Session   Session        `gorm:"foreignKey:UserID"`
 	Settings  []UserSettings `gorm:"foreignKey:UserID"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
@@ -48,121 +48,121 @@ type UserSettings struct {
 }
 
 type AuditLog struct {
-	ID        uint      `gorm:"primaryKey"`
-	UserID    uint      `json:"user_id"`
-	User      User      `gorm:"foreignKey:UserID" json:"user"`
+	ID     uint `gorm:"primaryKey"`
+	UserID uint `json:"user_id"`
+	User   User `gorm:"foreignKey:UserID" json:"user"`
 
-	Event     string    `gorm:"not null" json:"event"`
-	Action    string    `gorm:"not null" json:"action"`
-	Data      string    `gorm:"not null" json:"data"`
-	CreatedAt time.Time `gorm:"not null" json:"created_at"`
-	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
+	Event     string         `gorm:"not null" json:"event"`
+	Action    string         `gorm:"not null" json:"action"`
+	Data      string         `gorm:"not null" json:"data"`
+	CreatedAt time.Time      `gorm:"not null" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"not null" json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Organization struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:text" json:"uuid"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
+	ID          uint   `gorm:"primaryKey" json:"id"`
+	UUID        string `gorm:"type:text" json:"uuid"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 
-	Members     []OrganizationMember
+	Members []OrganizationMember
 
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type OrganizationMember struct {
-	ID             	uint      `gorm:"primaryKey"`
-	UUID           	string    `gorm:"type:text" json:"uuid"`
-	IsAdmin        	bool      `json:"is_admin"`
+	ID      uint   `gorm:"primaryKey"`
+	UUID    string `gorm:"type:text" json:"uuid"`
+	IsAdmin bool   `json:"is_admin"`
 
-	UserID         	uint      	`gorm:"uniqueIndex:idx_org_user" json:"user_id"`
-	User           	User      	`gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user"`
-	OrganizationID 	uint      	`gorm:"uniqueIndex:idx_org_user" json:"organization_id"`
-	Organization   	Organization `gorm:"foreignKey:OrganizationID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"organization"`
+	UserID         uint         `gorm:"uniqueIndex:idx_org_user" json:"user_id"`
+	User           User         `gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user"`
+	OrganizationID uint         `gorm:"uniqueIndex:idx_org_user" json:"organization_id"`
+	Organization   Organization `gorm:"foreignKey:OrganizationID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"organization"`
 
-	CreatedAt      	time.Time 	`json:"created_at"`
-	UpdatedAt      	time.Time 	`json:"updated_at"`
-	DeletedAt		gorm.DeletedAt 	`gorm:"index" json:"deleted_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 // VisibilityType defines who can see an acronym
 type VisibilityType string
 
 const (
-	VisibilityPrivate    VisibilityType = "private"     // Only visible to owner
-	VisibilityPublic     VisibilityType = "public"      // Visible to everyone
+	VisibilityPrivate      VisibilityType = "private"      // Only visible to owner
+	VisibilityPublic       VisibilityType = "public"       // Visible to everyone
 	VisibilityOrganization VisibilityType = "organization" // Visible to specific organization
-	VisibilityUser       VisibilityType = "user"        // Visible to specific user
+	VisibilityUser         VisibilityType = "user"         // Visible to specific user
 )
 
 type Acronym struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	UUID        string    `gorm:"type:uuid;unique;index" json:"uuid"`
-	Acronym     string    `json:"acronym"`
-	Meaning     string    `json:"meaning"`
-	Description string    `json:"description"`
-	OwnerID     uint      `json:"owner_id"`
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	UUID        string         `gorm:"type:uuid;unique;index" json:"uuid"`
+	Acronym     string         `json:"acronym"`
+	Meaning     string         `json:"meaning"`
+	Description string         `json:"description"`
+	OwnerID     uint           `json:"owner_id"`
 	Visibility  VisibilityType `gorm:"type:text;default:'private'" json:"visibility"`
-	
-	Owner       User      `gorm:"foreignKey:OwnerID" json:"owner"`
-	Related     []Acronym `gorm:"many2many:acronym_relations;" json:"related"`
-	Labels      []Label   `gorm:"many2many:acronym_labels;" json:"labels"`
-	Notes       []Notes `gorm:"foreignKey:AcronymID" json:"notes"`
-	Grants      []AcronymGrant   `gorm:"foreignKey:AcronymID" json:"grants"`
-	Revisions   []AcronymRevision `gorm:"foreignKey:ForeignKeyID" json:"revisions"`
 
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	DeletedAt 	gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	Owner     User              `gorm:"foreignKey:OwnerID" json:"owner"`
+	Related   []Acronym         `gorm:"many2many:acronym_relations;" json:"related"`
+	Labels    []Label           `gorm:"many2many:acronym_labels;" json:"labels"`
+	Notes     []Notes           `gorm:"foreignKey:AcronymID" json:"notes"`
+	Grants    []AcronymGrant    `gorm:"foreignKey:AcronymID" json:"grants"`
+	Revisions []AcronymRevision `gorm:"foreignKey:ForeignKeyID" json:"revisions"`
+
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Label struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
-	Label     string    `json:"label"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	UUID      string         `gorm:"type:text" json:"uuid"`
+	Label     string         `json:"label"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type Notes struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
-	AcronymID uint      `json:"acronym_id"`
-	UserID    uint      `json:"user_id"`
-	Note      string    `json:"note"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	UUID      string         `gorm:"type:text" json:"uuid"`
+	AcronymID uint           `json:"acronym_id"`
+	UserID    uint           `json:"user_id"`
+	Note      string         `json:"note"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-	User      User      `gorm:"foreignKey:UserID" json:"user"`
+	User      User           `gorm:"foreignKey:UserID" json:"user"`
 }
 
 type AcronymGrant struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UUID      string    `gorm:"type:text" json:"uuid"`
-	AcronymID uint      `json:"acronym_id"`
-	GranteeID uint      `json:"grantee_id"`
-	GranteeType string    `json:"grantee_type"` // "user", "organization", or "group"
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	UUID        string         `gorm:"type:text" json:"uuid"`
+	AcronymID   uint           `json:"acronym_id"`
+	GranteeID   uint           `json:"grantee_id"`
+	GranteeType string         `json:"grantee_type"` // "user", "organization", or "group"
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type AcronymRevision struct {
-	ID             uint           `gorm:"primaryKey" json:"id"`
-	UUID           string         `gorm:"type:text" json:"uuid"`
-	ForeignKeyID   uint           `json:"foreign_key_id"`
-	UserID         uint           `json:"user_id"`
-	User           User           `gorm:"foreignKey:UserID" json:"user"`
-	Action         string         `json:"action"`
-	OldValue       string         `json:"old_value"`
-	NewValue       string         `json:"new_value"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	ID           uint           `gorm:"primaryKey" json:"id"`
+	UUID         string         `gorm:"type:text" json:"uuid"`
+	ForeignKeyID uint           `json:"foreign_key_id"`
+	UserID       uint           `json:"user_id"`
+	User         User           `gorm:"foreignKey:UserID" json:"user"`
+	Action       string         `json:"action"`
+	OldValue     string         `json:"old_value"`
+	NewValue     string         `json:"new_value"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 // UUIDable interface for models that need UUID generation
@@ -182,13 +182,13 @@ func GenerateUUID(tx *gorm.DB, model UUIDable) error {
 }
 
 // Implement UUIDable for all models that need UUID generation
-func (u *User) SetUUID(uuid string) { u.UUID = uuid }
-func (o *Organization) SetUUID(uuid string) { o.UUID = uuid }
+func (u *User) SetUUID(uuid string)                { u.UUID = uuid }
+func (o *Organization) SetUUID(uuid string)        { o.UUID = uuid }
 func (om *OrganizationMember) SetUUID(uuid string) { om.UUID = uuid }
-func (a *Acronym) SetUUID(uuid string) { a.UUID = uuid }
-func (l *Label) SetUUID(uuid string) { l.UUID = uuid }
-func (ac *Notes) SetUUID(uuid string) { ac.UUID = uuid }
-func (ag *AcronymGrant) SetUUID(uuid string) { ag.UUID = uuid }
+func (a *Acronym) SetUUID(uuid string)             { a.UUID = uuid }
+func (l *Label) SetUUID(uuid string)               { l.UUID = uuid }
+func (ac *Notes) SetUUID(uuid string)              { ac.UUID = uuid }
+func (ag *AcronymGrant) SetUUID(uuid string)       { ag.UUID = uuid }
 
 // BeforeCreate hooks using the generic GenerateUUID function
 func (u *User) BeforeCreate(tx *gorm.DB) error {
@@ -244,42 +244,40 @@ func revisionCreateHelper(tx *gorm.DB, model Revisionable, action string, userID
 	// Meaning
 	// Description
 	// OwnerID
-	
+
 	oldJSON, _ := json.Marshal(oldValue)
 	newJSON, _ := json.Marshal(model)
 
-
-
 	revision := AcronymRevision{
-		UUID:           uuid.New().String(),
-		ForeignKeyID:   id,
-		UserID:         userID,
-		Action:         action,
-		OldValue:       string(oldJSON),
-		NewValue:       string(newJSON),
+		UUID:         uuid.New().String(),
+		ForeignKeyID: id,
+		UserID:       userID,
+		Action:       action,
+		OldValue:     string(oldJSON),
+		NewValue:     string(newJSON),
 	}
 	return tx.Create(&revision).Error
 }
 
 // Example implementation for Acronym
-func (a *Acronym) GetID() uint { return a.ID }
+func (a *Acronym) GetID() uint         { return a.ID }
 func (a *Acronym) GetTypeName() string { return "Acronym" }
 func (a *Acronym) BeforeUpdate(tx *gorm.DB) error {
 	// Strip out the columns that is not necessary to save
 	changed := Acronym{
-		Acronym: a.Acronym,
-		Meaning: a.Meaning,
+		Acronym:     a.Acronym,
+		Meaning:     a.Meaning,
 		Description: a.Description,
-		OwnerID: a.OwnerID,
+		OwnerID:     a.OwnerID,
 	}
-	
+
 	return revisionCreateHelper(tx, &changed, "update", 1) // Replace 0 with actual user ID if available
 }
 
 /* func (a *Acronym) AfterCreate(tx *gorm.DB) error {
 	return revisionCreateHelper(tx, a, "create", 1) // Replace 0 with actual user ID if available
 }
- */
+*/
 
 func GetGormDB() *gorm.DB {
 	if gormDB == nil {
