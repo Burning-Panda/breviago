@@ -1,34 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/Burning-Panda/breviago/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 var (
 	database *gorm.DB
 )
-
-type Owner struct {
-	Name string `json:"name"`
-	UUID string `json:"uuid"`
-}
-
-// AcronymResponse represents the public view of an Acronym
-type AcronymResponse struct {
-	UUID    string    `json:"uuid"`
-	Acronym string    `json:"acronym"`
-	Meaning string    `json:"meaning"`
-	Owner   Owner   	`json:"owner"`
-	Labels  []db.Label `json:"labels"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
 
 func main() {
 	// Initialize database
@@ -101,29 +86,16 @@ func getAcronyms(c *gin.Context) {
 	if err := database.
 		Preload("Owner").
 		Preload("Labels").
-		Where(&db.Acronym{Visibility: db.VisibilityPrivate}).
-		Where(&db.Acronym{OwnerID: 1}).
+		Where(&db.Acronym{Visibility: db.VisibilityPrivate, OwnerID: 1}).
 		Find(&acronyms).
 		Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronyms"})
 		return
 	}
 
-	// Convert to response format
-	response := make([]AcronymResponse, len(acronyms))
-	for i, a := range acronyms {
-		response[i] = AcronymResponse{
-			UUID:      a.UUID,
-			Acronym:   a.Acronym,
-			Meaning:   a.Meaning,
-			Owner:     Owner{
-				Name: a.Owner.Name,
-				UUID: a.Owner.UUID,
-			},
-			Labels:    a.Labels,
-			CreatedAt: a.CreatedAt,
-			UpdatedAt: a.UpdatedAt,
-		}
+	response := make([]db.AcronymResponse, 0, len(acronyms))
+	for i, acronym := range acronyms {
+		response[i] = acronym.ToResponse()
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -132,8 +104,37 @@ func getAcronyms(c *gin.Context) {
 }
 
 func getAcronym(c *gin.Context) {
+	id := c.Param("id")
+
+	// Validate UUID format
+	validUUID, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No acronym found with this ID"})
+		return
+	}
+
+	var acronym db.Acronym
+
+	if err := database.
+		Preload("Owner").
+		Preload("Labels").
+		Where(&db.Acronym{UUID: validUUID.String()}).
+		First(&acronym).
+		Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Acronym not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch acronym"})
+		return
+	}
+	// Check if the user is the owner of the acronym
+	// Assuming the user ID is stored in the context
+	// TODO: Implement user ID retrieval from context
+	// TODO: Implement ownership check
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, World!",
+		"data": acronym.ToResponse(),
 	})
 }
 
@@ -151,7 +152,7 @@ func createAcronym(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Acronym created successfully",
-		"data": acronym,
+		"data":    acronym,
 	})
 }
 
@@ -166,8 +167,6 @@ func deleteAcronym(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
-
-
 
 /* User API */
 
@@ -186,7 +185,7 @@ func getMe(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
-		"user": user,
+		"user":    user,
 	})
 }
 
@@ -207,13 +206,3 @@ func deleteUser(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
-
-
-
-
-
-
-
-
-
-
