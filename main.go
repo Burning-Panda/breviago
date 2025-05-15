@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"slices"
 
 	"github.com/Burning-Panda/breviago/db"
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,41 @@ var (
 	database *gorm.DB
 )
 
+func AuthenticatedMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Sorry, you are not logged in"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// Add use to the gin context for authentication
+func UserMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// TODO: Implement a token validation for validating if user is logged in
+		// For now, we will just set a user ID in the context
+
+		var user db.User
+		err := database.
+			Where(&db.User{UUID: "00000000-0000-0000-0000-000000000000"}). // TODO: Get user UUID from token
+			First(&user).
+			Error
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+
+		// Set user in context
+		c.Set("user", user)
+		c.Next()
+	}
+}
 func main() {
 	// Initialize database
 	database = db.GetGormDB(database)
@@ -37,7 +73,7 @@ func main() {
 	// Routes
 	r.GET("/", getDefault)
 
-	api := r.Group("/api")
+	api := r.Group("/api", AuthenticatedMiddleware(), UserMiddleware())
 	api.GET("/", testAcronyms)
 
 	api.GET("/acronyms", getAcronyms)
@@ -94,7 +130,7 @@ func getAcronyms(c *gin.Context) {
 
 	response := make([]db.AcronymResponse, 0, len(acronyms))
 	for i, acronym := range acronyms {
-		response[i] = acronym.ToResponse()
+		response = slices.Insert(response, i, acronym.ToResponse())
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -104,6 +140,9 @@ func getAcronyms(c *gin.Context) {
 
 func getAcronym(c *gin.Context) {
 	id := c.Param("id")
+
+	var usr db.User
+	usr = c.MustGet("user").(db.User)
 
 	// Validate UUID format
 	validUUID, err := uuid.Parse(id)
@@ -117,7 +156,10 @@ func getAcronym(c *gin.Context) {
 	if err := database.
 		Preload("Owner").
 		Preload("Labels").
-		Where(&db.Acronym{UUID: validUUID.String()}).
+		Where(&db.Acronym{
+			UUID:    validUUID.String(),
+			OwnerID: usr.ID,
+		}).
 		First(&acronym).
 		Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -138,11 +180,17 @@ func getAcronym(c *gin.Context) {
 }
 
 func createAcronym(c *gin.Context) {
+	usr := c.MustGet("user").(db.User)
+
 	var acronym db.Acronym
 	if err := c.ShouldBindJSON(&acronym); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+
+	// Set the owner ID to the current user's ID
+	acronym.OwnerID = usr.ID
+	acronym.Owner = usr
 
 	if err := database.Create(&acronym).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create acronym"})
