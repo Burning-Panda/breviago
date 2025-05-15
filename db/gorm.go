@@ -14,7 +14,7 @@ import (
 
 type Session struct {
 	ID        uint      `gorm:"primaryKey"`
-	UserID    uint      `json:"user_id"`
+	UserID    uint      `json:"user_id" gorm:"OnDelete:CASCADE"`
 	Token     string    `gorm:"unique;index" json:"token"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -29,14 +29,14 @@ type User struct {
 	Password  string         `gorm:"default:''"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 	Session   Session        `gorm:"foreignKey:UserID"`
 	Settings  []UserSettings `gorm:"foreignKey:UserID"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 type UserSettings struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `json:"user_id"`
+	UserID    uint      `json:"user_id" gorm:"OnDelete:CASCADE"`
 	Setting   string    `json:"setting"`
 	Value     string    `json:"value"`
 	CreatedAt time.Time `json:"created_at"`
@@ -75,7 +75,7 @@ type OrganizationMember struct {
 	IsAdmin bool   `json:"is_admin"`
 
 	UserID         uint         `gorm:"uniqueIndex:idx_org_user" json:"user_id"`
-	User           User         `gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"user"`
+	User           User         `gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user"`
 	OrganizationID uint         `gorm:"uniqueIndex:idx_org_user" json:"organization_id"`
 	Organization   Organization `gorm:"foreignKey:OrganizationID; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"organization"`
 
@@ -99,7 +99,7 @@ type Acronym struct {
 	UUID        string         `gorm:"type:uuid;unique;index" json:"uuid"`
 	Acronym     string         `json:"acronym"`
 	Meaning     string         `json:"meaning"`
-	Description string         `json:"description"`
+	Description *string        `json:"description"`
 	OwnerID     uint           `json:"owner_id"`
 	Visibility  VisibilityType `gorm:"type:text;default:'private'" json:"visibility"`
 
