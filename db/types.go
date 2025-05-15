@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -41,4 +42,22 @@ func (a Acronym) ToResponse() AcronymResponse {
 	}
 
 	return r
+}
+
+func (a Acronym) Validate() error {
+	// Validations
+	// - Acronym cannot be empty
+	// - Meaning cannot be empty
+	// -
+
+	if a.Acronym == "" {
+		return fmt.Errorf("acronym cannot be empty")
+	}
+	if a.Meaning == "" {
+		return fmt.Errorf("meaning cannot be empty")
+	}
+	if len(a.Labels) == 0 {
+		return fmt.Errorf("labels cannot be empty")
+	}
+	return nil
 }
