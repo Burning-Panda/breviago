@@ -12,10 +12,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var (
-	gormDB *gorm.DB
-)
-
 type Session struct {
 	ID        uint      `gorm:"primaryKey"`
 	UserID    uint      `json:"user_id"`
@@ -279,45 +275,48 @@ func (a *Acronym) BeforeUpdate(tx *gorm.DB) error {
 }
 */
 
-func GetGormDB() *gorm.DB {
-	if gormDB == nil {
-		var err error
-		gormDB, err = gorm.Open(sqlite.Open("acronyms.db"), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Info),
-		})
+func GetGormDB(database *gorm.DB) *gorm.DB {
+	if database != nil {
+		return database
+	}
 
-		if err != nil {
-			log.Fatal("Failed to connect to database:", err)
-		}
+	gormDB, err := gorm.Open(sqlite.Open("acronyms.db"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 
-		// Auto migrate the schema
-		err = gormDB.AutoMigrate(
-			&User{},
-			&Organization{},
-			&OrganizationMember{},
-			&Acronym{},
-			&AcronymGrant{},
-			&Label{},
-			&AcronymRevision{},
-			&Notes{},
-			&Session{},
-			&UserSettings{},
-		)
-		if err != nil {
-			log.Fatal("Failed to migrate database:", err)
-		}
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+		return nil
+	}
+
+	// Auto migrate the schema
+	err = gormDB.AutoMigrate(
+		&User{},
+		&Organization{},
+		&OrganizationMember{},
+		&Acronym{},
+		&AcronymGrant{},
+		&Label{},
+		&AcronymRevision{},
+		&Notes{},
+		&Session{},
+		&UserSettings{},
+	)
+	if err != nil {
+		log.Fatal("Failed to migrate database:", err)
 	}
 
 	return gormDB
 }
 
-func CloseGormDB() error {
-	if gormDB != nil {
-		sqlDB, err := gormDB.DB()
+func CloseGormDB(database *gorm.DB) error {
+	if database != nil {
+		sqlDB, err := database.DB()
 		if err != nil {
 			return err
 		}
 		return sqlDB.Close()
 	}
+
 	return nil
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -17,12 +16,12 @@ var (
 
 func main() {
 	// Initialize database
-	database = db.GetGormDB()
+	database = db.GetGormDB(database)
 	if database == nil {
 		log.Fatal("Failed to initialize database")
 	}
 	defer func() {
-		if err := db.CloseGormDB(); err != nil {
+		if err := db.CloseGormDB(database); err != nil {
 			log.Printf("Error closing database: %v", err)
 		}
 	}()
