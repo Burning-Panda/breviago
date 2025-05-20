@@ -26,7 +26,7 @@ type AcronymResponse struct {
 	UpdatedAt time.Time   `json:"updated_at"`
 }
 
-func (a Acronym) ToResponse() AcronymResponse {
+func (a Acronym) ToJson() AcronymResponse {
 	r := AcronymResponse{
 		UUID:      a.UUID,
 		Acronym:   a.Acronym,

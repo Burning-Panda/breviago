@@ -28,6 +28,7 @@ func AuthenticatedMiddleware() gin.HandlerFunc {
 	}
 }
 
+// TODO: Move this to a separate package
 // Add use to the gin context for authentication
 func UserMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -130,7 +131,7 @@ func getAcronyms(c *gin.Context) {
 
 	response := make([]db.AcronymResponse, 0, len(acronyms))
 	for i, acronym := range acronyms {
-		response = slices.Insert(response, i, acronym.ToResponse())
+		response = slices.Insert(response, i, acronym.ToJson())
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -175,7 +176,7 @@ func getAcronym(c *gin.Context) {
 	// TODO: Implement ownership check
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": acronym.ToResponse(),
+		"data": acronym.ToJson(),
 	})
 }
 

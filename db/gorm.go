@@ -26,7 +26,7 @@ type User struct {
 	Name      string         `gorm:"unique" json:"name"`
 	LegalName string         `gorm:"unique" json:"legal_name"`
 	Email     string         `gorm:"unique" json:"email"`
-	Password  string         `gorm:"default:''"`
+	Password  string         `gorm:"default:''" json:"-"` // using "-" will always make it not included in the JSON response but you should always use .
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
@@ -99,7 +99,7 @@ type Acronym struct {
 	UUID        string         `gorm:"type:uuid;unique;index" json:"uuid"`
 	Acronym     string         `json:"acronym"`
 	Meaning     string         `json:"meaning"`
-	Description *string        `json:"description"`
+	Description string         `json:"description" gorm:"default:''"`
 	OwnerID     uint           `json:"owner_id"`
 	Visibility  VisibilityType `gorm:"type:text;default:'private'" json:"visibility"`
 
