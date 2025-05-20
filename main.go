@@ -8,6 +8,7 @@ import (
 	"github.com/Burning-Panda/breviago/db"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -238,8 +239,43 @@ func getMe(c *gin.Context) {
 }
 
 func createUser(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Hello, World!",
+	var userInput struct {
+		Name      string `json:"name" binding:"required"`
+		LegalName string `json:"legal_name" binding:"required"`
+		Email     string `json:"email" binding:"required,email"`
+		Password  string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userInput.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	user := db.User{
+		Name:      userInput.Name,
+		LegalName: userInput.LegalName,
+		Email:     userInput.Email,
+		Password:  string(hashedPassword),
+	}
+
+	if err := database.Create(&user).Error; err != nil {
+		// TODO: Handle database errors, e.g., unique constraint violations
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	// Remove password from response
+	user.Password = ""
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User created successfully",
+		"data":    user,
 	})
 }
 
@@ -254,3 +290,11 @@ func deleteUser(c *gin.Context) {
 		"message": "Hello, World!",
 	})
 }
+
+func getAcronymsWithGrants(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+	})
+}
+
+
