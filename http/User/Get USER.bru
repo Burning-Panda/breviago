@@ -1,0 +1,11 @@
+meta {
+  name: Get USER
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/api/users/UUID
+  body: none
+  auth: inherit
+}
